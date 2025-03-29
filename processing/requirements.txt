@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+pymongo
+numpy
+scikit-learn  # Example AI library

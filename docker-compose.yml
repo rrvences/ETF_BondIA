@@ -1,0 +1,29 @@
+services:
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+  fastapi-app:
+    build:
+      context: ./fastapi-app
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
+  streamlit-app:
+    build:
+      context: ./streamlit-app
+    ports:
+      - "8501:8501"
+    networks:
+      - app-network
+
+volumes:
+  mongo_data:
+
+networks:
+  app-network:
