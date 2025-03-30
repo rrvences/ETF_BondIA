@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pymongo import MongoClient
@@ -7,6 +8,7 @@ from processing.parser import parse_pdf_document
 from processing.process_json_data import extract_maturity
 from bson import ObjectId
 from typing import Any, Dict, Optional
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -50,12 +52,8 @@ def serialize_record(record: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any
         record["_id"] = str(record["_id"])  # Convert ObjectId to string
     return record
 
-@app.get("/maturity")
-def get_maturity(isin: str):
-
-
-    print(f"Here {isin}")
-
+def get_maturity_record(isin: str):
+    """Fetch maturity record from MongoDB."""
     # Connect to the MongoDB client
     client = MongoClient(mongo_uri)
 
@@ -71,35 +69,65 @@ def get_maturity(isin: str):
     # Close the client connection
     client.close()
 
+    return record
+
+@app.get("/maturity")
+def get_maturity(isin: str):
+    # Fetch the maturity record using the helper function
+    record = get_maturity_record(isin)
 
     return record if record else {"error": "No record found"}
 
 
-@app.post("/extract")
-def extract_data(data: IsinInput):
-    
-    # Dummy processing logic
-    isin = data.isin
-    extract_and_save_pdf(isin)
-    return {"message": "Data Extracted and stored successfully!"}
-
-
-@app.post("/parse")
-def parse_data(data: IsinInput):
-    
-    # Dummy processing logic
-    isin = data.isin
-    parse_pdf_document(isin)
-    return {"message": "Data Parsed and stored successfully!"}
-
-
 @app.post("/process")
 def process_data(data: IsinInput):
-    
-    # Dummy processing logic
+    # Extract the ISIN from the input
     isin = data.isin
 
-    jsons_save_path = f"/app/data/json/{isin}_factsheet.json"
-    maturtity = extract_maturity(jsons_save_path)
-    insert_record(isin,maturtity)
-    return maturtity
+    # Define file paths
+    pdf_path = f"/app/data/factsheet/{isin}_factsheet.pdf"
+    json_save_path = f"/app/data/json/{isin}_factsheet.json"
+
+    # Check if the PDF already exists
+    if not os.path.exists(pdf_path):
+        extract_and_save_pdf(isin)  # Only execute if PDF does not exist
+
+    # Check if the JSON already exists
+    if not os.path.exists(json_save_path):
+        parse_pdf_document(isin)  # Only execute if JSON does not exist
+
+    # Check if maturity data already exists
+    existing_record = get_maturity_record(isin)
+
+    if existing_record:
+        # If maturity data exists, return it
+        maturity = existing_record
+    else:
+        # If maturity data does not exist, extract it
+        maturity = extract_maturity(json_save_path)
+        insert_record(isin, maturity)  # Insert the new maturity record
+
+    return maturity
+
+@app.get("/records")
+def get_records():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"/app/code/processing/etfs_ref_data.csv")
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
+
+@app.get("/pdf-records")
+def get_pdf_records():
+    # Read the CSV file into a DataFrame
+    list_of_pdfs = os.listdir("/app/data/factsheet/")
+    pdf_records = [ pdf.replace("_factsheet.pdf") for pdf in list_of_pdfs]
+    return pdf_records
+
+@app.get("/json-records")
+def get_json_records():
+    # Read the CSV file into a DataFrame
+    list_of_json = os.listdir("/app/data/json/")
+    json_records = [ pdf.replace("_factsheet.json") for pdf in list_of_json]
+    return json_records
