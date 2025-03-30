@@ -1,0 +1,16 @@
+field_mappings:
+  "Annualised performance": 
+    - "CUMULATIVE & ANNUALISED PERFORMANCE"
+    - "Annualised performance"
+  "12-month Performance":
+    - "CALENDAR YEAR PERFORMANCE"
+    - "Rolling 12-month performance"
+  "Credit Rating":
+    - "CREDIT RATINGS (%)"
+    - "Distribution by credit quality (% of fund)"
+  "Maturity breakdown":
+    - "Distribution by credit maturity (% of fund)"
+    - "MATURITY BREAKDOWN (%)"
+  "Sector Breakdown":
+    - "SECTOR BREAKDOWN (%)"
+    - "Distribution by issuer (% of fund)"
