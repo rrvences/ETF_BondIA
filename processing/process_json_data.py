@@ -22,7 +22,6 @@ def extract_tables(data, mode='all', heading=''):
         return tables
     else:
         if heading not in tables.keys():
-            print(f'Table for {heading} not found')
             return -1
         else:
             return tables[heading]
@@ -41,7 +40,17 @@ def process_table(data, heading):
         return {}
     cols = [col if col != '' else 'Column ' + str(i) for i, col in enumerate(table[0]) ]
     table = pd.DataFrame(table[1:], columns=cols)
-    return table.to_dict()
+    if table.shape[1] == 2:
+        table_dict = dict(zip(table.iloc[:,0].values, table.iloc[:,1]))
+    else:
+        if heading in ['Maturity Breakdown']:
+            values = (table.iloc[:,1::2].T.values).reshape(-1)
+            keys = (table.iloc[:,::2].T.values).reshape(-1)
+            table_dict = dict(zip(keys, values))
+        else:
+            print('This table requires more processing')
+            table_dict = {}
+    return table_dict
 
     
 def extract_fields(data):
@@ -54,6 +63,40 @@ def extract_fields(data):
             else:
                 fields[last_heading] = item['type']
     return fields
+
+def extract_year_performance(json_file_path):
+    field = "12-month Performance"
+    data = load_json(json_file_path)
+    json_table = process_table(data, field)
+    return json_table
+
+def extract_market_allocation(json_file_path):
+    field = "Market Allocation"
+    data = load_json(json_file_path)
+    json_table = process_table(data, field)
+    return json_table
+
+
+def extract_credit_rate(json_file_path):
+    field = "Credit Rating"
+    data = load_json(json_file_path)
+    json_table = process_table(data, field)
+
+    return json_table
+
+def extract_sector(json_file_path):
+    field = "Sector Breakdown"
+    data = load_json(json_file_path)
+    json_table = process_table(data, field)
+
+    return json_table
+
+def extract_annualised_performance(json_file_path):
+    field = "Annualised Performance"
+    data = load_json(json_file_path)
+    json_table = process_table(data, field)
+
+    return json_table
 
 
 def convert_dict(input_dict):
@@ -75,10 +118,22 @@ def convert_dict(input_dict):
 
 
 def extract_maturity(json_file_path:str):
-    field = 'Maturity breakdown'
+    field = 'Maturity Breakdown'
     data = load_json(json_file_path)
     json_table = process_table(data, field)
-    return convert_dict(json_table)
+    # return convert_dict(json_table)
+    return json_table
 
 if __name__ == '__main__':
     print("Here")
+    json_dir = os.path.join(os.getcwd(), 'files', 'json')
+    df_json = pd.DataFrame()
+    field = "Annualised performance"
+    for file in os.listdir(json_dir):
+        json_file = os.path.join(json_dir, file)
+        data = load_json(json_file)
+        json_table = extract_credit_rate(json_file)
+        json_table = extract_annualised_performance(json_file)
+        json_table = extract_year_performance(json_file)
+        json_table = extract_sector(json_file)
+        print(json_table)
