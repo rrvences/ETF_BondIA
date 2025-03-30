@@ -6,9 +6,10 @@ from llama_cloud_services import LlamaParse
 # set up parser
 parser = LlamaParse(
     result_type="json",
-    api_key=os.getenv("LLAMA_CLOUD_API_KEY")
+    api_key=os.getenv("LLAMA_CLOUD_API_KEY"),
+    extract_charts = True,
+    premium_mode= True
 )
-
 
 
 def parse_pdf_document(isin:str):

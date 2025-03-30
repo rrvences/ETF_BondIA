@@ -11,6 +11,7 @@ field_mappings:
   "Maturity breakdown":
     - "Distribution by credit maturity (% of fund)"
     - "MATURITY BREAKDOWN (%)"
+    - "Distibution by effective maturity"
   "Sector Breakdown":
     - "SECTOR BREAKDOWN (%)"
     - "Distribution by issuer (% of fund)"
