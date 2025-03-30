@@ -1,6 +1,9 @@
 services:
   mongo:
     image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}  # Use variable from .env
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}  # Use variable from .env
     volumes:
       - mongo_data:/data/db
     networks:
@@ -8,9 +11,14 @@ services:
 
   fastapi-app:
     build:
-      context: ./fastapi-app
+      context: ./
+      dockerfile: ./fastapi-app/Dockerfile
+    env_file:
+      - .env
     ports:
       - "8000:8000"
+    volumes:
+      - data:/app/data/
     networks:
       - app-network
 
@@ -24,6 +32,7 @@ services:
 
 volumes:
   mongo_data:
+  data:
 
 networks:
   app-network:
