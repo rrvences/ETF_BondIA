@@ -1,5 +1,13 @@
 fastapi
 uvicorn
 pymongo
-numpy
-scikit-learn  # Example AI library
+llama-cloud-services 
+llama-index-core 
+llama-index-readers-file 
+python-dotenv
+pyyaml
+pandas
+requests
+bs4
+pypdf2
+pdf2image
