@@ -2,16 +2,18 @@ import os
 from typing import Optional, Dict, Any
 from pymongo import MongoClient
 
-# Load MongoDB credentials from environment variables
-MONGO_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
-MONGO_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
 
-# MongoDB connection string
-mongo_uri = f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@mongo:27017/"
+
+
 
 class MongoDBUtils:
-    def __init__(self, uri: str, db_name: str):
-        self.client = MongoClient(uri)
+    def __init__(self, db_name: str = "bonds"):
+        # Load MongoDB credentials from environment variables
+        MONGO_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
+        MONGO_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
+        # MongoDB connection string
+        mongo_uri = f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@mongo:27017/"
+        self.client = MongoClient(mongo_uri)
         self.db = self.client[db_name]
 
     def create_collection(self, collection_name: str):

@@ -17,13 +17,16 @@ FASTAPI_URL = "http://fastapi-app:8000"
 # Create a sidebar for the app
 sidebar = st.sidebar
 
-isin1 = sidebar.selectbox('Isin1',["IE0008U15456","IE00BH04GL39"])
-isin2 = sidebar.selectbox('Isin2',["IE0008U15456","IE00BH04GL39"])
+list_of_isins = requests.get(f"{FASTAPI_URL}/json-records").json()
+
+isin1 = sidebar.selectbox('Isin1',list_of_isins)
+isin2 = sidebar.selectbox('Isin2',list_of_isins)
 compare_button = sidebar.button('Compare')
 
-def get_isin_data(isin):
+
+def get_element_data(isin,element):
      # Call the FastAPI endpoint with a GET request
-    response = requests.get(f"{FASTAPI_URL}/maturity?isin={isin}")
+    response = requests.get(f"{FASTAPI_URL}/element?isin={isin}&element={element}")
 
     if response.status_code == 200:
             record = response.json()
@@ -32,13 +35,14 @@ def get_isin_data(isin):
     else:
         st.error("Error fetching record from the server.")
     
-    return record
+    return record["element"]
+
 
 # Button to fetch the maturity record
 if compare_button:
 
-    table_maturity_1 = get_isin_data(isin1)["maturity"]
-    table_maturity_2 = get_isin_data(isin2)["maturity"]
+    table_maturity_1 = get_element_data(isin1,"maturity")
+    table_maturity_2 = get_element_data(isin2,"maturity")
 
         # Convert to DataFrame
     df1 = pd.DataFrame(list(table_maturity_1.items()), columns=['Maturity', 'Value 1'])

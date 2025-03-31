@@ -4,12 +4,12 @@ WORKDIR /app
 
 COPY ./fastapi-app/requirements.txt .
 
-# Copy the processing package
-COPY processing /app/code/processing
+# Copy the pipelines package
+COPY pipelines /app/code/pipelines
 
 COPY ./fastapi-app/main.py .
 
-# Set the PYTHONPATH to include the processing directory
+# Set the PYTHONPATH to include the pipelines directory
 ENV PYTHONPATH="/app/code/:${PYTHONPATH}"
 
 # Install system dependencies

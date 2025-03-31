@@ -13,14 +13,22 @@ st.set_page_config(
 FASTAPI_URL = "http://fastapi-app:8000"
 
 
-# Call the FastAPI endpoint
-get_records = requests.get(f"{FASTAPI_URL}/records")
+json_records = requests.get(f"{FASTAPI_URL}/json-records").json()
+pdf_records = requests.get(f"{FASTAPI_URL}/pdf-records").json()
 
-if get_records.status_code == 200:
-    records = get_records.json()
+# Call the FastAPI endpoint
+get_avaliable_records = requests.get(f"{FASTAPI_URL}/records")
+
+if get_avaliable_records.status_code == 200:
+    records = get_avaliable_records.json()
     # Convert the list of dictionaries to a DataFrame
     df = pd.DataFrame(records)
-    st.dataframe(df)
+
+    # Create new columns for JSON and PDF with icons
+    df['JSON'] = df['isin'].apply(lambda x: '✅' if x in json_records else '')
+    df['PDF'] = df['isin'].apply(lambda x: '✅' if x in pdf_records else '')
+
+    st.dataframe(df,  )
 else:
     st.error("Error fetching records from the server.")
 
