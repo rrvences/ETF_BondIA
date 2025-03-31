@@ -3,7 +3,7 @@ import requests
 from PIL import Image
 from bs4 import BeautifulSoup
 from pdf2image import convert_from_bytes
-
+from processing.process_utils.filesystem_utils import FS_PATH
 
 def extract_factsheet_link(url):
 
@@ -57,7 +57,7 @@ def extract_and_save_pdf(isin:str = ""):
         if factsheet_element and 'href' in factsheet_element.attrs:
             factsheet_url = factsheet_element['href']
             factsheet_content = extract_factsheet_content(factsheet_url)
-            pdf_bytes_to_single_pdf(factsheet_content,f"/app/data/factsheet/{isin}_factsheet.pdf")
+            pdf_bytes_to_single_pdf(factsheet_content,f"{FS_PATH}{isin}_factsheet.pdf")
 
         else:
             raise Exception("Not able to find En Factsheet")

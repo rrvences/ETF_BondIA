@@ -2,6 +2,9 @@ import json
 import os
 import yaml
 import pandas as pd
+from functools import partial
+from processing.process_utils.filesystem_utils import CODE_PATH
+
 
 # Function to load JSON data
 def load_json(file_path):
@@ -26,10 +29,12 @@ def extract_tables(data, mode='all', heading=''):
         else:
             return tables[heading]
 
+
+
 def process_table(data, heading):
     """Process one table from the json, the one that is after the heading
     """
-    with open('processing/field_mappings.yaml', 'r') as file:
+    with open(f'{CODE_PATH}processing/ref_data/field_mappings.yaml', 'r') as file:
         field_mappings = yaml.safe_load(file)['field_mappings']
     map_list = field_mappings[heading]
     for map in map_list:
@@ -41,21 +46,35 @@ def process_table(data, heading):
     else: 
         return table
 
+
+
 def convert_dict(table):
-    # table is a list
-    # pass first 
+    # Check if the input table is empty
     if table == []:
-        return {}
-    cols = [col if col != '' else 'Column ' + str(i) for i, col in enumerate(table[0]) ]
+        return {}  # Return an empty dictionary if the table is empty
+
+    # Create a list of column names, replacing empty strings with 'Column X'
+    # where X is the index of the column
+    cols = [col if col != '' else 'Column ' + str(i) for i, col in enumerate(table[0])]
+
+    # Convert the table (list of lists) into a pandas DataFrame, using the first row as column names
     table = pd.DataFrame(table[1:], columns=cols)
+
+    # Check if the DataFrame has exactly 2 columns
     if table.shape[1] == 2:
-        table_dict = dict(zip(table.iloc[:,0].values, table.iloc[:,1]))
+        # If there are 2 columns, create a dictionary by zipping the first column (keys) with the second column (values)
+        table_dict = dict(zip(table.iloc[:, 0].values, table.iloc[:, 1]))
     else:
-        values = (table.iloc[:,1::2].T.values).reshape(-1)
-        keys = (table.iloc[:,::2].T.values).reshape(-1)
+        # If there are more than 2 columns, assume the keys are in the odd-indexed columns and values in the even-indexed columns
+        # Reshape the values and keys into a flat array
+        values = (table.iloc[:, 1::2].T.values).reshape(-1)  # Get values from even-indexed columns
+        keys = (table.iloc[:, ::2].T.values).reshape(-1)     # Get keys from odd-indexed columns
+        
+        # Create a dictionary by zipping the keys and values
         table_dict = dict(zip(keys, values))
     
-    return table_dict
+    return table_dict  # Return the constructed dictionary
+
 
     
 def extract_fields(data):
@@ -69,43 +88,19 @@ def extract_fields(data):
                 fields[last_heading] = item['type']
     return fields
 
-def extract_year_performance(json_file_path):
-    field = "12-month Performance"
+
+def extract_data(json_file_path: str, field: str):
     data = load_json(json_file_path)
     json_table = process_table(data, field)
     return convert_dict(json_table)
 
-def extract_market_allocation(json_file_path):
-    field = "Market Allocation"
-    data = load_json(json_file_path)
-    json_table = process_table(data, field)
-    return convert_dict(json_table)
-
-
-def extract_credit_rate(json_file_path):
-    field = "Credit Rating"
-    data = load_json(json_file_path)
-    json_table = process_table(data, field)
-    return convert_dict(json_table)
-
-def extract_sector(json_file_path):
-    field = "Sector Breakdown"
-    data = load_json(json_file_path)
-    json_table = process_table(data, field)
-    return convert_dict(json_table)
-
-def extract_annualised_performance(json_file_path):
-    field = "Annualised Performance"
-    data = load_json(json_file_path)
-    json_table = process_table(data, field)
-    return convert_dict(json_table)
-
-
-def extract_maturity(json_file_path:str):
-    field = 'Maturity Breakdown'
-    data = load_json(json_file_path)
-    json_table = process_table(data, field)
-    return convert_dict(json_table)
+# Create partial functions for each specific extraction
+extract_year_performance = partial(extract_data, field="12-month Performance")
+extract_market_allocation = partial(extract_data, field="Market Allocation")
+extract_credit_rate = partial(extract_data, field="Credit Rating")
+extract_sector = partial(extract_data, field="Sector Breakdown")
+extract_annualised_performance = partial(extract_data, field="Annualised Performance")
+extract_maturity = partial(extract_data, field="Maturity Breakdown")
 
 
 if __name__ == '__main__':
