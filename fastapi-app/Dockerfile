@@ -25,6 +25,6 @@ RUN mkdir -p /app/data/factsheet
 
 RUN mkdir -p /app/data/json
 
-RUN pip install -r /app/code/processing/requirements.txt
+RUN pip install -r /app/code/pipelines/requirements.txt
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

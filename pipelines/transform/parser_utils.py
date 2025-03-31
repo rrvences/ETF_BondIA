@@ -2,7 +2,7 @@
 import json
 import os
 from llama_cloud_services import LlamaParse
-from processing.process_utils.filesystem_utils import FS_PATH, JSON_PATH 
+from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH 
 
 # set up parser
 llama_parser = LlamaParse(

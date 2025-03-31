@@ -3,7 +3,7 @@ import requests
 from PIL import Image
 from bs4 import BeautifulSoup
 from pdf2image import convert_from_bytes
-from processing.process_utils.filesystem_utils import FS_PATH
+from pipelines.general.filesystem_utils import FS_PATH
 
 def extract_factsheet_link(url):
 

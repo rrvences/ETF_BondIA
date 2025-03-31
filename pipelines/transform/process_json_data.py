@@ -3,7 +3,7 @@ import os
 import yaml
 import pandas as pd
 from functools import partial
-from processing.process_utils.filesystem_utils import CODE_PATH
+from pipelines.general.filesystem_utils import CODE_PATH
 
 
 # Function to load JSON data
@@ -34,7 +34,7 @@ def extract_tables(data, mode='all', heading=''):
 def process_table(data, heading):
     """Process one table from the json, the one that is after the heading
     """
-    with open(f'{CODE_PATH}processing/ref_data/field_mappings.yaml', 'r') as file:
+    with open(f'{CODE_PATH}pipelines/ref_data/field_mappings.yaml', 'r') as file:
         field_mappings = yaml.safe_load(file)['field_mappings']
     map_list = field_mappings[heading]
     for map in map_list:

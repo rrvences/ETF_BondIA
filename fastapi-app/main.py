@@ -1,12 +1,12 @@
 import os
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from processing.extract_etfs_factsheet import extract_and_save_pdf
-from processing.process_utils.parser_utils import parse_pdf_document
-from processing.process_utils.process_json_data import extract_maturity
 from fastapi.responses import JSONResponse
-from processing.process_utils.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
+from pydantic import BaseModel
+from pipelines.extraction.extract_etfs_factsheet import extract_and_save_pdf
+from pipelines.transform.parser_utils import parse_pdf_document
+from pipelines.transform.process_json_data import extract_maturity
+from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
 
 
 app = FastAPI()
@@ -56,7 +56,7 @@ def process_data(data: IsinInput):
 @app.get("/records")
 def get_records():
     # Read the CSV file into a DataFrame
-    df = pd.read_csv(f"{CODE_PATH}processing/ref_data/etfs_ref_data.csv")
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
     # Convert the DataFrame to a dictionary
     records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
     return JSONResponse(content=records_dict)
