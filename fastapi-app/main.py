@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Callable, Any
 from pipelines.extraction.extract_etfs_factsheet import extract_and_save_pdf
-from pipelines.transform.parser_utils import parse_pdf_document
+from pipelines.transform.parser_utils import parse_pdf_document, save_json_to_file
 from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
 from pipelines.mongo.mongo_utils import MongoDBUtils
 from pipelines.transform.process_json_data import (extract_maturity,
@@ -48,7 +48,8 @@ def process_data(data: IsinInput):
 
     # Check if the JSON already exists
     if not os.path.exists(json_save_path):
-        parse_pdf_document(isin)  # Only execute if JSON does not exist
+        json_data = parse_pdf_document(isin)  # Only execute if JSON does not exist
+        save_json_to_file(json_data, isin)
 
 
     for element in ["maturity","sector","credit_rate","market_allocation"]:

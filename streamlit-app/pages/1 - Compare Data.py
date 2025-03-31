@@ -35,8 +35,28 @@ def get_element_data(isin,element):
     else:
         st.error("Error fetching record from the server.")
     
-    return record["element"]
+    return record[element]
 
+
+def clean_tables(table_1, table_2, element):
+
+        # Convert to DataFrame
+        df1 = pd.DataFrame(list(table_1.items()), columns=[element, 'Value 1'])
+        df2 = pd.DataFrame(list(table_2.items()), columns=[element, 'Value 2'])
+
+        # Convert values to numeric
+        df1['Value 1'] = df1['Value 1'].replace('%', '', regex=True).astype(float)
+        df2['Value 2'] = df2['Value 2'].replace('%', '', regex=True).astype(float)
+
+        df_merged = pd.merge(df1, df2, on=element, how='outer').fillna(0)
+        return df1, df2, df_merged
+
+
+def clean_keys(table):
+    table = {key.split(" ")[0].capitalize(): value for key, value in table.items() 
+             if "Total" not in key and 'Derivatives' not in key}
+
+    return table
 
 # Button to fetch the maturity record
 if compare_button:
@@ -44,31 +64,52 @@ if compare_button:
     table_maturity_1 = get_element_data(isin1,"maturity")
     table_maturity_2 = get_element_data(isin2,"maturity")
 
-        # Convert to DataFrame
-    df1 = pd.DataFrame(list(table_maturity_1.items()), columns=['Maturity', 'Value 1'])
-    df2 = pd.DataFrame(list(table_maturity_2.items()), columns=['Maturity', 'Value 2'])
 
-    # Convert values to numeric
-    df1['Value 1'] = df1['Value 1'].replace('%', '', regex=True).astype(float)
-    df2['Value 2'] = df2['Value 2'].replace('%', '', regex=True).astype(float)
+    table_rating_1 = get_element_data(isin1,"credit_rate")
+    table_rating_2 = get_element_data(isin2,"credit_rate")
 
-    # Streamlit App
-    st.title("Maturity Tables Comparison")
+    
+    table_market_1 = get_element_data(isin1,"market_allocation")
+    table_market_2 = get_element_data(isin2,"market_allocation")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("### Table Maturity 1")
-        st.dataframe(df1)
-    with col2:
-        st.write("### Table Maturity 2")
-        st.dataframe(df2)
 
-    # Merging Data for Comparison
-    df_merged = pd.merge(df1, df2, on='Maturity', how='outer').fillna(0)
-
+    # Maturity
+    df1, df2, df_merged = clean_tables(clean_keys(table_maturity_1), clean_keys(table_maturity_2), element='Maturity')
     # Plot Comparison
     st.write("### Maturity Distribution Comparison")
     fig = px.bar(df_merged.melt(id_vars=['Maturity'], var_name='Table', value_name='Percentage'), 
                 x='Maturity', y='Percentage', color='Table', barmode='group',
                 title="Comparison of Maturity Distributions")
     st.plotly_chart(fig)
+
+
+    ### RATING
+    df1, df2, df_merged = clean_tables(clean_keys(table_rating_1), clean_keys(table_rating_2), element='Rating')
+
+    # Plot Rating Breakdown
+    st.write("### Rating Breakdown Comparison")
+    fig_rating = px.bar(df_merged.melt(id_vars=['Rating'], var_name='Table', value_name='Percentage'), 
+                        x='Rating', y='Percentage', color='Table', barmode='group',
+                        title="Comparison of Rating Breakdown")
+
+    fig_rating.update_layout(barmode='group',
+        bargap=0.15, # gap between bars of adjacent location coordinates.
+        bargroupgap=0.1 # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig_rating)
+
+    ### MARKET ALLOCATION
+    # Standardizing Country Names (Removing extra words for consistency)
+
+    df1, df2, df_market_merged = clean_tables(clean_keys(table_market_1), clean_keys(table_market_2), element='Country')
+    # Sort by first dataset for better comparison
+    df_market_merged = df_market_merged.sort_values(by="Value 1", ascending=False)
+
+    # Plot
+    st.write("### Market Allocation Comparison")
+    fig_market = px.bar(df_market_merged.melt(id_vars=['Country'], var_name='Table', value_name='Percentage'),
+                        y='Country', x='Percentage', color='Table', barmode='group',
+                        title="Comparison of Market Allocation",
+                        orientation='h')  # Horizontal bars
+
+    st.plotly_chart(fig_market)
