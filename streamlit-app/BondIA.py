@@ -3,7 +3,6 @@ from streamlit_pdf_viewer import pdf_viewer
 import pandas as pd
 import requests
 
-
 # Set the page configuration
 st.set_page_config(
     page_title="BondIA", 

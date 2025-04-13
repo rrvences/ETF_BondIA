@@ -105,6 +105,62 @@ def get_records():
     records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
     return JSONResponse(content=records_dict)
 
+
+@app.get("/country_list_ratings")
+def get_country_list_ratings():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Country_List_Credit_Ratings.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
+
+@app.get("/credit_ratings_guide")
+def get_country_list_ratings():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Credit_Ratings_guide.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
+@app.get("/interest_rates")
+def get_interest_rates():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Interest_Rates.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
+@app.get("/country_debt_to_gdp")
+def get_country_debt_to_gdp():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Country_List_Government_Debt_to_GDP.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
+@app.get("/records")
+def get_records():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
+@app.get("/records")
+def get_records():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
+
 @app.get("/read_pdf")
 def get_pdf_records(isin: str):
     # Validate the ISIN parameter if necessary
