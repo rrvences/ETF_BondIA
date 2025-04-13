@@ -1,0 +1,24 @@
+S&P,Moody's,DBRS,Description
+AAA,Aaa,AAA,Prime
+AA+,Aa1,AA (high),High grade
+AA,Aa2,AA,
+AA-,Aa3,AA (low),
+A+,A1,A (high),Upper medium grade
+A,A2,A,
+A-,A3,A (low),
+BBB+,Baa1,BBB (high),Lower medium grade
+BBB,Baa2,BBB,
+BBB-,Baa3,BBB (low),
+BB+,Ba1,BB (high),Non-investment grade
+BB,Ba2,BB,
+BB-,Ba3,BB (low),
+B+,B1,B (high),Highly speculative
+B,B2,B,
+B-,B3,B (low),
+CCC+,Caa1,CCC (high),Substantial risks
+CCC,Caa2,,
+CCC-,Caa3,,In default
+CC,Ca,,
+C,C,,Junk
+DD,DDD,,
+D,D,,
