@@ -1,6 +1,4 @@
-import io
 import requests
-from PIL import Image
 from bs4 import BeautifulSoup
 from pdf2image import convert_from_bytes
 from pipelines.general.filesystem_utils import FS_PATH
@@ -45,6 +43,12 @@ def pdf_bytes_to_single_pdf(pdf_bytes, output_pdf_path):
     else:
         print("No images to save.")
 
+
+def read_pdf_file_to_bytes(pdf_path: str):
+    # Read the PDF file into bytes
+    with open(pdf_path, 'rb') as file:
+        pdf_bytes = file.read()
+    return pdf_bytes
 
 
 def extract_and_save_pdf(isin:str = ""):

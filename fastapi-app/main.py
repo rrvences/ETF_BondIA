@@ -1,10 +1,11 @@
 import os
+import io
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Dict, Callable, Any
-from pipelines.extraction.extract_etfs_factsheet import extract_and_save_pdf
+from pipelines.extraction.extract_etfs_factsheet import extract_and_save_pdf, read_pdf_file_to_bytes
 from pipelines.transform.parser_utils import parse_pdf_document, save_json_to_file
 from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
 from pipelines.mongo.mongo_utils import MongoDBUtils
@@ -99,10 +100,25 @@ def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_pat
 def get_records():
     # Read the CSV file into a DataFrame
     df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    df.fillna(value="NA", inplace=True)
     # Convert the DataFrame to a dictionary
     records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
     return JSONResponse(content=records_dict)
 
+@app.get("/read_pdf")
+def get_pdf_records(isin: str):
+    # Validate the ISIN parameter if necessary
+    if not isin or len(isin) != 12:  # Example validation for ISIN length
+        raise HTTPException(status_code=422, detail="Invalid ISIN provided.")
+
+    pdf_path = f"{FS_PATH}/{isin}_factsheet.pdf"
+    try:
+        pdf_content = read_pdf_file_to_bytes(pdf_path)
+        return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf')
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="An error occurred while processing the request.")
 
 @app.get("/pdf-records")
 def get_pdf_records():
