@@ -62,12 +62,13 @@ def extract_and_save_pdf(isin:str = ""):
             factsheet_url = factsheet_element['href']
             factsheet_content = extract_factsheet_content(factsheet_url)
             pdf_bytes_to_single_pdf(factsheet_content,f"{FS_PATH}{isin}_factsheet.pdf")
+            return "Factsheet extracted and save"
 
         else:
-            raise Exception("Not able to find En Factsheet")
+            return "Not able to find En Factsheet"
     
     else:
-        raise Exception("Not able to find etf in Just Etf")
+        return "Not able to find etf in Just Etf"
 
     
 

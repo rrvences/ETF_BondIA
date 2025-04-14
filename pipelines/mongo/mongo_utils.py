@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, List
 from pymongo import MongoClient
 
 
@@ -36,10 +36,43 @@ class MongoDBUtils:
         """Check if a record exists in a specified collection."""
         collection = self.db[collection_name]
         return collection.count_documents(query) > 0
+    
+    def upsert_record(self, collection_name: str, record: Dict[str, Any],key_field: Union[str, List[str]]):
+        """
+        Upsert a record into a specified collection.
+        If the record already exists based on the key_field, it will be replaced.
+        Otherwise, a new record will be inserted.
+        """
+
+        # Convert key_field to a list if it's a single string
+        if isinstance(key_field, str):
+            key_field = [key_field]
+
+        collection = self.db[collection_name]
+        pipeline = [
+            {
+                "$merge": {
+                    "into": collection_name,
+                    "on": key_field,
+                    "whenMatched": "replace",
+                    "whenNotMatched": "insert"
+                }
+            },
+            {
+                "$replaceRoot": {
+                    "newRoot": record
+                }
+            }
+        ]
+        result = collection.aggregate(pipeline)
+        return next(result, None)
+
+    
 
     def close_connection(self):
         """Close the MongoDB client connection."""
         self.client.close()
+
 
     @staticmethod
     def serialize_record(record: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:

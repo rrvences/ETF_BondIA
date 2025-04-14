@@ -74,3 +74,7 @@ def get_etf_info(ticker) -> pd.DataFrame:
        'fiftyTwoWeekChangePercent', 'dividendDate', 'trailingPegRatio'])
     
     return df_info
+
+df_info = get_etf_daily_prices("TLT")
+result_dict = df_info.head(5).groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
+print(result_dict)
