@@ -1,6 +1,6 @@
 import os
-from typing import Optional, Dict, Any
-from pymongo import MongoClient
+from typing import Optional, Dict, Any, Union, List
+from pymongo import MongoClient, ASCENDING
 
 
 
@@ -36,10 +36,41 @@ class MongoDBUtils:
         """Check if a record exists in a specified collection."""
         collection = self.db[collection_name]
         return collection.count_documents(query) > 0
+    
+    def upsert_record(self, collection_name: str, record: Dict[str, Any], key_field: Union[str, List[str]]):
+        """
+        Upsert a record into a specified collection.
+        If the record already exists based on the key_field, it will be replaced.
+        Otherwise, a new record will be inserted.
+        """
+
+        # Ensure the key_field is a list for consistency
+        key_fields = [key_field] if isinstance(key_field, str) else key_field
+
+        collection = self.db[collection_name]
+
+        # Create an index on the 'isin' field if it doesn't exist
+        collection.create_index([(key_field[0], ASCENDING)], unique=True)
+
+        collection = self.db[collection_name]
+
+        filter_query = {field: record[field] for field in key_fields}
+
+        # Use $set to update the fields in the record
+        result = collection.update_one(
+            filter_query,  # Filter by key_fields
+            {"$set": record},  # Update the record
+            upsert=True  # Insert if not found
+        )
+        
+        return result
+
+    
 
     def close_connection(self):
         """Close the MongoDB client connection."""
         self.client.close()
+
 
     @staticmethod
     def serialize_record(record: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -48,10 +79,15 @@ class MongoDBUtils:
             record["_id"] = str(record["_id"])  # Convert ObjectId to string
         return record
 
-# Example usage:
-# mongo_utils = MongoDBUtils(mongo_uri, "bonds")
-# mongo_utils.create_collection("maturity")
-# mongo_utils.insert_record("maturity", {"isin": "US1234567890", "maturity": "2025-12-31"})
-# record = mongo_utils.retrieve_record("maturity", {"isin": "US1234567890"})
-# exists = mongo_utils.record_exists("maturity", {"isin": "US1234567890"})
-# mongo_utils.close_connection()
+# Example usage
+if __name__ == "__main__":
+    mongodb = MongoDBUtils()
+
+    record = {
+        "isin": "US0378331005",  # Example ISIN
+        "name": "Apple Inc.",
+        "price": 150.00
+    }
+
+    result = mongodb.upsert_record("test_1", record,"isin")
+    print(result)

@@ -23,7 +23,7 @@ def get_etf_dividends_issued(ticker, period = 'max') -> pd.DataFrame:
         yticker = yf.Ticker(ticker)
         df_dividends = pd.DataFrame(yticker.get_dividends())
         df_dividends["date"] = df_dividends.index
-        df_dividends["date"] = df_dividends["date"].dt.date
+        df_dividends["date"] = df_dividends["date"].dt.floor('D')
         df_dividends["ticker"] = ticker
         df_dividends.reset_index(drop=True, inplace = True)
     except Exception as e:
@@ -38,7 +38,7 @@ def get_etf_info(ticker) -> pd.DataFrame:
         yticker = yf.Ticker(ticker)
         info_dict = yticker.get_info()
         if isinstance(info_dict, dict):
-            info_dict["symbol"] = ticker
+            info_dict["ticker"] = ticker
         df_info = pd.DataFrame([info_dict])
     except Exception as e:
         print(ticker,e)
@@ -71,6 +71,10 @@ def get_etf_info(ticker) -> pd.DataFrame:
        'averageDailyVolume3Month', 'fiftyTwoWeekLowChange',
        'fiftyTwoWeekLowChangePercent', 'fiftyTwoWeekRange',
        'fiftyTwoWeekHighChange', 'fiftyTwoWeekHighChangePercent',
-       'fiftyTwoWeekChangePercent', 'dividendDate', 'trailingPegRatio'])
+       'fiftyTwoWeekChangePercent', 'dividendDate', 'trailingPegRatio','ticker'])
     
     return df_info
+
+#df_info = get_etf_daily_prices("TLT")
+#result_dict = df_info.head(5).groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
+#print(result_dict)

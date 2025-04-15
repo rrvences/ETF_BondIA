@@ -76,7 +76,7 @@ def main():
         # Get the selected row's index
         selected_isin = selected_row  # Get the ISIN of the selected row
 
-        options = ["Process Factsheet"]
+        options = ["Process Factsheet","Get Prices and Details"]
 
         if selected_isin in pdf_records:
             options.extend(["View PDF"])
@@ -88,6 +88,18 @@ def main():
             if action == "View PDF":
                 try:
                     pdf_viewer(read_pdf_content(selected_isin))  # Assuming this function displays the PDF
+                except Exception:
+                    st.error("Failed to fetch PDF. Please try again.")
+            
+            if action == "Get Prices and Details":
+                try:
+                   with st.spinner("Processing... Please wait."):
+                    prices_response = requests.post(f"{FASTAPI_URL}/extract_info?isin={selected_isin}")
+                    dividens_response = requests.post(f"{FASTAPI_URL}/extract_prices?isin={selected_isin}")
+                    info_response = requests.post(f"{FASTAPI_URL}/extract_dividends?isin={selected_isin}")
+                    st.text(prices_response.text)
+                    st.text(dividens_response.text)
+                    st.text(info_response.text)
                 except Exception:
                     st.error("Failed to fetch PDF. Please try again.")
 

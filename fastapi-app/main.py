@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Dict, Callable, Any
 from pipelines.extraction.extract_etfs_factsheet import extract_and_save_pdf, read_pdf_file_to_bytes
+from pipelines.extraction.extract_etfs_details import get_etf_daily_prices, get_etf_dividends_issued, get_etf_info
 from pipelines.transform.parser_utils import parse_pdf_document, save_json_to_file
 from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
 from pipelines.mongo.mongo_utils import MongoDBUtils
@@ -28,8 +29,26 @@ class IsinInput(BaseModel):
     isin: str
 
 
+def get_isin_from_ticker(ticker: str):
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    result = df[df['ticker'].str.upper() == ticker.upper()]
+    if not result.empty:
+        return result['isin'].values[0]
+    else:
+        return None
+
+
+def get_ticker_from_isin(isin: str):
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    result = df[df['isin'] == isin]
+    if not result.empty:
+        return result['ticker'].values[0]
+    else:
+        return None
+
+
 @app.get("/element")
-def get_element(isin: str, element:str):
+def get_element_data(isin: str, element:str):
     # Fetch the maturity record using the helper function
     
     record = mongodb.retrieve_record(element,{"isin":isin})
@@ -49,7 +68,7 @@ def process_data(data: IsinInput):
 
     # Check if the PDF already exists
     if not os.path.exists(pdf_path):
-        extract_and_save_pdf(isin)  # Only execute if PDF does not exist
+        print(extract_and_save_pdf(isin))  # Only execute if PDF does not exist
 
     # Check if the JSON already exists
     if not os.path.exists(json_save_path):
@@ -63,6 +82,53 @@ def process_data(data: IsinInput):
 
     return "Isin Processed"
 
+@app.post("/extract_prices")
+def extract_daily_prices(isin: str):
+    
+    ticker = get_ticker_from_isin(isin)
+    daily_prices_df =  get_etf_daily_prices(ticker)
+    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
+
+    # Assuming result_dict is your dictionary with tickers as keys
+    for ticker, records in result_dict.items():
+        # Insert each record into the collection
+        for record_data in records:
+            record_data["isin"] = isin
+            mongodb.upsert_record("etf_daily_prices", record_data, "ticker")
+
+    return "Daily Prices Processed"
+
+@app.post("/extract_dividends")
+def extract_dividends_issued(isin: str):
+
+    ticker = get_ticker_from_isin(isin)
+    daily_prices_df =  get_etf_dividends_issued(ticker)
+    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
+
+    # Assuming result_dict is your dictionary with tickers as keys
+    for ticker, records in result_dict.items():
+        # Insert each record into the collection
+        for record_data in records:
+            record_data["isin"] = isin
+            mongodb.upsert_record("etf_dividends_issued", record_data, "ticker")
+
+    return "Dividends Processed"
+
+@app.post("/extract_info")
+def extract_info(isin: str):
+
+    ticker = get_ticker_from_isin(isin)
+    daily_prices_df =  get_etf_info(ticker)
+    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
+
+    # Assuming result_dict is your dictionary with tickers as keys
+    for ticker, records in result_dict.items():
+        # Insert each record into the collection
+        for record_data in records:
+            record_data["isin"] = isin
+            mongodb.upsert_record("etf_info", record_data, "ticker")
+
+    return "Etf Info Processed"
 
 def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_path: str):
     """
