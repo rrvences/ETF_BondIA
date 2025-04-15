@@ -27,7 +27,7 @@ def get_element_data_as_df(isin, element):
     
 
 
-    return pd.DataFrame([record])
+    return pd.DataFrame(record)
 
 # Streamlit app
 st.title("Element Price Comparison")
@@ -58,7 +58,7 @@ if selected_elements:
     # Create a bar chart using Plotly
     if not prices_df.empty:
         fig = go.Figure(data=[
-            go.Bar(x=prices_df['isin'], y=prices_df['Close'], marker_color='skyblue')
+            go.Scatter(x=prices_df['date'], y=prices_df['Close'], marker_color='skyblue')
         ])
         
         fig.update_layout(
