@@ -162,3 +162,14 @@ if __name__ == '__main__':
 
     # json_table = extract_year_performance(json_file)
     # print(f"\n table_year_{i} = ", json_table)
+
+        json_table = extract_annualised_performance(json_file)
+        print(f"\n table_performance_{i} = ", json_table)
+
+        json_table = extract_portfolio_characteristics(json_file)
+        print(f"\n table_portfolio_{i} = ", json_table)
+
+        json_table = extract_year_performance(json_file)
+        print(f"\n table_year_{i} = ", json_table)
+
+        i += 1
