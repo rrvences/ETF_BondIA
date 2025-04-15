@@ -12,8 +12,11 @@ from pipelines.mongo.mongo_utils import MongoDBUtils
 from pipelines.transform.process_json_data import (extract_maturity,
                                                     extract_market_allocation, 
                                                     extract_credit_rate,
-                                                    extract_sector
+                                                    extract_sector,
+                                                    extract_portfolio_characteristics
+                                                    
                                                     )
+from pipelines.transform.convert_data_uniformization import clean_table
 
 
 
@@ -26,11 +29,12 @@ class IsinInput(BaseModel):
 
 
 @app.get("/element")
-def get_maturity(isin: str, element:str):
+def get_element(isin: str, element:str):
     # Fetch the maturity record using the helper function
     
     record = mongodb.retrieve_record(element,{"isin":isin})
-
+    print(f'Fetching data \n {record} \n ----')
+    record[element] = clean_table(record[element], element)
     return record if record else {"error": "No record found"}
 
 
@@ -53,11 +57,11 @@ def process_data(data: IsinInput):
         save_json_to_file(json_data, isin)
 
 
-    for element in ["maturity","sector","credit_rate","market_allocation"]:
+    for element in ["maturity","sector","credit_rate","market_allocation", "portfolio"]:
+        
         extract_element_and_insert_into_mongo(isin,element,json_save_path)
-    
-    return "Isin Processed"
 
+    return "Isin Processed"
 
 
 def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_path: str):
@@ -75,6 +79,7 @@ def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_pat
         "sector": extract_sector,
         "credit_rate": extract_credit_rate,
         "market_allocation": extract_market_allocation,
+        "portfolio": extract_portfolio_characteristics
     }
     
     # Check if the provided element is valid
@@ -87,13 +92,14 @@ def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_pat
     if not existing_record:
         # If the record does not exist, extract the data
         extracted_data = function_dict[element](json_save_path)
+        print(f"---- \n Data extracted {element}: \n {extracted_data} \n ----")  # Optionally print the result of the insertion
 
         # Prepare the record for insertion
         record_data = {"isin": isin, element: extracted_data}
 
         # Insert the new record into MongoDB
         insert_result = mongodb.insert_record(element, record_data)
-        print(insert_result)  # Optionally print the result of the insertion
+        print(f"Inserted {element}: \n {insert_result}")  # Optionally print the result of the insertion
 
 
 @app.get("/records")

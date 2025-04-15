@@ -1,7 +1,11 @@
 field_mappings:
+  "Portfolio Characteristics":
+    - "PORTFOLIO CHARACTERISTICS"
+    - "Characteristics"
   "Annualised Performance": 
     - "CUMULATIVE & ANNUALISED PERFORMANCE"
     - "Annualised performance"
+    - "Performance summary"
   "12-month Performance":
     - "CALENDAR YEAR PERFORMANCE"
     - "Rolling 12-month performance"
@@ -12,9 +16,14 @@ field_mappings:
     - "Distribution by credit maturity (% of fund)"
     - "MATURITY BREAKDOWN (%)"
     - "Distibution by effective maturity"
+    - "Maturity Breakdown"
   "Sector Breakdown":
     - "SECTOR BREAKDOWN (%)"
     - "Distribution by issuer (% of fund)"
   "Market Allocation":
     - "TOP ISSUERS"
     - "Market allocation"
+  "Risk Indicator":
+    - "RISK INDICATOR"
+    - "SRI"    
+
