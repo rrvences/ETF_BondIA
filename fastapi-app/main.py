@@ -26,8 +26,26 @@ class IsinInput(BaseModel):
     isin: str
 
 
+def get_isin_from_ticker(ticker: str):
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    result = df[df['ticker'].str.upper() == ticker.upper()]
+    if not result.empty:
+        return result['isin'].values[0]
+    else:
+        return None
+
+
+def get_ticker_from_isin(isin: str):
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    result = df[df['isin'] == isin]
+    if not result.empty:
+        return result['ticker'].values[0]
+    else:
+        return None
+
+
 @app.get("/element")
-def get_maturity(isin: str, element:str):
+def get_element_data(isin: str, element:str):
     # Fetch the maturity record using the helper function
     
     record = mongodb.retrieve_record(element,{"isin":isin})
@@ -59,11 +77,10 @@ def process_data(data: IsinInput):
     
     return "Isin Processed"
 
-@app.post("/get_prices")
-def get_daily_prices(data: IsinInput):
-    # Extract the ISIN from the input
-    ticker = data.ticker
-
+@app.post("/extract_prices")
+def extract_daily_prices(isin: str):
+    
+    ticker = get_ticker_from_isin(isin)
     daily_prices_df =  get_etf_daily_prices(ticker)
     result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
 
@@ -71,15 +88,15 @@ def get_daily_prices(data: IsinInput):
     for ticker, records in result_dict.items():
         # Insert each record into the collection
         for record_data in records:
-            mongodb.upsert_record("etf_daily_prices", record_data, ticker)
+            record_data["isin"] = isin
+            mongodb.upsert_record("etf_daily_prices", record_data, "ticker")
 
     return "Daily Prices Processed"
 
-@app.post("/get_dividens")
-def get_dividens_issued(data: IsinInput):
-    # Extract the ISIN from the input
-    ticker = data.ticker
+@app.post("/extract_dividends")
+def extract_dividends_issued(isin: str):
 
+    ticker = get_ticker_from_isin(isin)
     daily_prices_df =  get_etf_dividends_issued(ticker)
     result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
 
@@ -87,15 +104,15 @@ def get_dividens_issued(data: IsinInput):
     for ticker, records in result_dict.items():
         # Insert each record into the collection
         for record_data in records:
-            mongodb.upsert_record("etf_dividens_issued", record_data, ticker)
+            record_data["isin"] = isin
+            mongodb.upsert_record("etf_dividends_issued", record_data, "ticker")
 
     return "Dividends Processed"
 
-@app.post("/get_info")
-def get_info(data: IsinInput):
-    # Extract the ISIN from the input
-    ticker = data.ticker
+@app.post("/extract_info")
+def extract_info(isin: str):
 
+    ticker = get_ticker_from_isin(isin)
     daily_prices_df =  get_etf_info(ticker)
     result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
 
@@ -103,7 +120,8 @@ def get_info(data: IsinInput):
     for ticker, records in result_dict.items():
         # Insert each record into the collection
         for record_data in records:
-            mongodb.upsert_record("etf_info", record_data, ticker)
+            record_data["isin"] = isin
+            mongodb.upsert_record("etf_info", record_data, "ticker")
 
     return "Etf Info Processed"
 
