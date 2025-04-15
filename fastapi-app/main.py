@@ -13,8 +13,11 @@ from pipelines.mongo.mongo_utils import MongoDBUtils
 from pipelines.transform.process_json_data import (extract_maturity,
                                                     extract_market_allocation, 
                                                     extract_credit_rate,
-                                                    extract_sector
+                                                    extract_sector,
+                                                    extract_portfolio_characteristics
+                                                    
                                                     )
+from pipelines.transform.convert_data_uniformization import clean_table
 
 
 
@@ -48,9 +51,7 @@ def get_element_data(isin: str, element:str):
     # Fetch the maturity record using the helper function
     mongodb = MongoDBUtils()
     record = mongodb.retrieve_record(element,{"isin":isin})
-    print(mongodb.retrieve_record("etf_daily_prices",{"isin":"IE00BZ163G84"}))
-    mongodb.close_connection()
-    print(record)
+    record[element] = clean_table(record[element], element)
 
     return record if record else {"error": "No record found"}
 
@@ -74,9 +75,10 @@ def process_data(data: IsinInput):
         save_json_to_file(json_data, isin)
 
 
-    for element in ["maturity","sector","credit_rate","market_allocation"]:
+    for element in ["maturity","sector","credit_rate","market_allocation", "portfolio"]:
+        
         extract_element_and_insert_into_mongo(isin,element,json_save_path)
-    
+
     return "Isin Processed"
 
 @app.post("/extract_prices")
@@ -150,6 +152,7 @@ def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_pat
         "sector": extract_sector,
         "credit_rate": extract_credit_rate,
         "market_allocation": extract_market_allocation,
+        "portfolio": extract_portfolio_characteristics
     }
     
     # Check if the provided element is valid
