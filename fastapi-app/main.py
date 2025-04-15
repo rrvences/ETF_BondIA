@@ -16,7 +16,11 @@ from pipelines.transform.process_json_data import (extract_maturity,
                                                     extract_sector,
                                                     extract_portfolio_characteristics
                                                     
+                                                    extract_sector,
+                                                    extract_portfolio_characteristics
+                                                    
                                                     )
+from pipelines.transform.convert_data_uniformization import clean_table
 from pipelines.transform.convert_data_uniformization import clean_table
 
 
@@ -47,12 +51,12 @@ def get_ticker_from_isin(isin: str):
 
 
 @app.get("/element")
-def get_element_data(isin: str, element:str):
+def get_element(isin: str, element:str):
     # Fetch the maturity record using the helper function
     mongodb = MongoDBUtils()
     record = mongodb.retrieve_record(element,{"isin":isin})
+    print(f'Fetching data \n {record} \n ----')
     record[element] = clean_table(record[element], element)
-
     return record if record else {"error": "No record found"}
 
 
@@ -77,65 +81,12 @@ def process_data(data: IsinInput):
 
     for element in ["maturity","sector","credit_rate","market_allocation", "portfolio"]:
         
+    for element in ["maturity","sector","credit_rate","market_allocation", "portfolio"]:
+        
         extract_element_and_insert_into_mongo(isin,element,json_save_path)
 
     return "Isin Processed"
 
-@app.post("/extract_prices")
-def extract_daily_prices(isin: str):
-    
-    ticker = get_ticker_from_isin(isin)
-    daily_prices_df =  get_etf_daily_prices(ticker)
-    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
-
-    mongodb = MongoDBUtils()
-
-
-    # Assuming result_dict is your dictionary with tickers as keys
-    for ticker, records in result_dict.items():
-        # Insert each record into the collection
-        for record_data in records:
-            record_data["isin"] = isin
-            mongodb.upsert_record("etf_daily_prices", record_data, ["isin","date"])
-    mongodb.close_connection()
-
-    return "Daily Prices Processed"
-
-@app.post("/extract_dividends")
-def extract_dividends_issued(isin: str):
-
-    ticker = get_ticker_from_isin(isin)
-    daily_prices_df =  get_etf_dividends_issued(ticker)
-    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
-    mongodb = MongoDBUtils()
-
-    # Assuming result_dict is your dictionary with tickers as keys
-    for ticker, records in result_dict.items():
-        # Insert each record into the collection
-        for record_data in records:
-            record_data["isin"] = isin
-            mongodb.upsert_record("etf_dividends_issued", record_data, ["isin","date"])
-    mongodb.close_connection()
-
-    return "Dividends Processed"
-
-@app.post("/extract_info")
-def extract_info(isin: str):
-
-    ticker = get_ticker_from_isin(isin)
-    daily_prices_df =  get_etf_info(ticker)
-    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
-    mongodb = MongoDBUtils()
-
-    # Assuming result_dict is your dictionary with tickers as keys
-    for ticker, records in result_dict.items():
-        # Insert each record into the collection
-        for record_data in records:
-            record_data["isin"] = isin
-            mongodb.upsert_record("etf_info", record_data, "isin")
-    mongodb.close_connection()
-
-    return "Etf Info Processed"
 
 def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_path: str):
     """
@@ -153,23 +104,37 @@ def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_pat
         "credit_rate": extract_credit_rate,
         "market_allocation": extract_market_allocation,
         "portfolio": extract_portfolio_characteristics
+        "portfolio": extract_portfolio_characteristics
     }
     
     # Check if the provided element is valid
     if element not in function_dict:
         raise ValueError(f"Invalid element type: {element}. Must be one of {list(function_dict.keys())}.")
-    
-    mongodb = MongoDBUtils()
 
-    # If the record does not exist, extract the data
-    extracted_data = function_dict[element](json_save_path)
+    # Check if the record already exists in MongoDB
+    existing_record = mongodb.record_exists(element, {"isin": isin})
 
-    # Prepare the record for insertion
-    record_data = {"isin": isin, element: extracted_data}
+    if not existing_record:
+        # If the record does not exist, extract the data
+        extracted_data = function_dict[element](json_save_path)
+        print(f"---- \n Data extracted {element}: \n {extracted_data} \n ----")  # Optionally print the result of the insertion
 
-    # Insert the new record into MongoDB
-    insert_result = mongodb.upsert_record(element, record_data,"isin")
-    print(insert_result)  # Optionally print the result of the insertion
+        # Prepare the record for insertion
+        record_data = {"isin": isin, element: extracted_data}
+
+        # Insert the new record into MongoDB
+        insert_result = mongodb.insert_record(element, record_data)
+        print(f"Inserted {element}: \n {insert_result}")  # Optionally print the result of the insertion
+
+
+@app.get("/records")
+def get_records():
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
+    df.fillna(value="NA", inplace=True)
+    # Convert the DataFrame to a dictionary
+    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
+    return JSONResponse(content=records_dict)
 
 
 @app.get("/country_list_ratings")
