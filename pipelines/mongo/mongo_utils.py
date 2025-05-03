@@ -62,20 +62,28 @@ class MongoDBUtils:
         collection = self.db[collection_name]
 
         # Create an index on the 'isin' field if it doesn't exist
-        collection.create_index([(field, ASCENDING) for field in key_field], unique=True)
+        collection.create_index([(field, ASCENDING) for field in key_fields], unique=True)
 
         collection = self.db[collection_name]
 
         filter_query = {field: record[field] for field in key_fields}
 
-        # Use $set to update the fields in the record
-        result = collection.update_one(
-            filter_query,  # Filter by key_fields
-            {"$set": record},  # Update the record
-            upsert=True  # Insert if not found
-        )
+        try:
+            # Use $set to update the fields in the record
+            result = collection.update_one(
+                filter_query,  # Filter by key_fields
+                {"$set": record},  # Update the record
+                upsert=True  # Insert if not found
+            )
+
+            return result
         
-        return result
+        except Exception as e:
+            print(e)
+            print(f"{filter_query=}")
+            print(f"{record=}")
+        
+        
 
     
 

@@ -71,10 +71,15 @@ def process_data(data: IsinInput):
         print(extract_and_save_pdf(isin))  # Only execute if PDF does not exist
 
     # Check if the JSON already exists
-    if not os.path.exists(json_save_path):
+    if not os.path.exists(json_save_path) and os.path.exists(pdf_path):
         json_data = parse_pdf_document(isin)  # Only execute if JSON does not exist
         save_json_to_file(json_data, isin)
 
+    else:
+        return "Not FactSheet Found"
+
+    if not os.path.exists(json_save_path):
+        return "Not Json Found"
 
     for element in ["maturity","sector","credit_rate","market_allocation", "portfolio"]:
         
@@ -98,6 +103,7 @@ def extract_daily_prices(isin: str):
         for record_data in records:
             record_data["isin"] = isin
             mongodb.upsert_record("etf_daily_prices", record_data, ["isin","date"])
+
     mongodb.close_connection()
 
     return "Daily Prices Processed"
@@ -116,6 +122,7 @@ def extract_dividends_issued(isin: str):
         for record_data in records:
             record_data["isin"] = isin
             mongodb.upsert_record("etf_dividends_issued", record_data, ["isin","date"])
+
     mongodb.close_connection()
 
     return "Dividends Processed"
@@ -134,6 +141,7 @@ def extract_info(isin: str):
         for record_data in records:
             record_data["isin"] = isin
             mongodb.upsert_record("etf_info", record_data, "isin")
+
     mongodb.close_connection()
 
     return "Etf Info Processed"
