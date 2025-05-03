@@ -11,6 +11,7 @@ field_mappings:
     - "Rolling 12-month performance"
   "Credit Rating":
     - "CREDIT RATINGS (%)"
+    - "Credit Quality Breakdown"
     - "Distribution by credit quality (% of fund)"
   "Maturity Breakdown":
     - "Distribution by credit maturity (% of fund)"
@@ -20,9 +21,11 @@ field_mappings:
   "Sector Breakdown":
     - "SECTOR BREAKDOWN (%)"
     - "Distribution by issuer (% of fund)"
+    - "Sector Breakdown"
   "Market Allocation":
     - "TOP ISSUERS"
     - "Market allocation"
+    - "Country Weights"
   "Risk Indicator":
     - "RISK INDICATOR"
     - "SRI"    
