@@ -153,6 +153,80 @@ def clean_tables(table_1, table_2, element):
     df1 = pd.DataFrame(list(table_1.items()), columns=[element, "Value 1"])
     df2 = pd.DataFrame(list(table_2.items()), columns=[element, "Value 2"])
 
+<<<<<<< HEAD
+    # Convert values to numeric
+    df1["Value 1"] = df1["Value 1"].replace("%", "", regex=True).astype(float)
+    df2["Value 2"] = df2["Value 2"].replace("%", "", regex=True).astype(float)
+=======
+<<<<<<< HEAD:streamlit-app/pages/1 - Compare Data.py
+    tables_df = [pd.DataFrame(list(tables[isin].items()), columns=[element, isin]) for isin in tables.keys()]
+    return pd.concat(tables_df)
+>>>>>>> 517c1c8 (improve price compare)
+
+    df_merged = pd.merge(df1, df2, on=element, how="outer").fillna(0)
+    return df1, df2, df_merged
+
+
+def clean_keys(table):
+    table = {
+        key.split(" ")[0].capitalize(): value
+        for key, value in table.items()
+        if "Total" not in key and "Derivatives" not in key
+    }
+
+<<<<<<< HEAD
+    return table
+=======
+    df_merged = merge_tables(tables_portfolio, element='Portfolio')
+    st.dataframe(df_merged)
+    
+    # Maturity
+    df_merged = merge_tables(tables_maturity, element='Maturity')
+    # Plot Comparison
+    st.write("### Maturity Distribution Comparison")
+    fig = px.bar(
+        df_merged.melt(id_vars=["Maturity"], var_name="Table", value_name="Percentage"),
+        x="Maturity",
+        y="Percentage",
+        color="Table",
+        barmode="group",
+        title="Comparison of Maturity Distributions",
+    )
+    st.plotly_chart(fig)
+
+    ### RATING
+    df_merged = merge_tables(tables_rating, element='Rating')
+    # Plot Rating Breakdown
+    st.write("### Rating Breakdown Comparison")
+    fig_rating = px.bar(
+        df_merged.melt(id_vars=["Rating"], var_name="Table", value_name="Percentage"),
+        x="Rating",
+        y="Percentage",
+        color="Table",
+        barmode="group",
+        title="Comparison of Rating Breakdown",
+    )
+
+    fig_rating.update_layout(
+        barmode="group",
+        bargap=0.15,  # gap between bars of adjacent location coordinates.
+        bargroupgap=0.1,  # gap between bars of the same location coordinate.
+    )
+    st.plotly_chart(fig_rating)
+
+    ### MARKET ALLOCATION
+    # Standardizing Country Names (Removing extra words for consistency)
+
+    df_merged = merge_tables(tables_market, element='Country')
+    # Plot
+    st.write("### Market Allocation Comparison")
+    fig_market = px.bar(df_merged.melt(id_vars=['Country'], var_name='Table', value_name='Percentage'),
+                        y='Country', x='Percentage', color='Table', barmode='group',
+                        title="Comparison of Market Allocation",
+                        orientation='h')  # Horizontal bars
+
+    
+=======
     # Convert values to numeric
     df1["Value 1"] = df1["Value 1"].replace("%", "", regex=True).astype(float)
     df2["Value 2"] = df2["Value 2"].replace("%", "", regex=True).astype(float)
@@ -169,3 +243,5 @@ def clean_keys(table):
     }
 
     return table
+>>>>>>> dfcc5b7 (improve price compare):streamlit-app/pages/1 - ETFs Overview.py
+>>>>>>> 517c1c8 (improve price compare)
