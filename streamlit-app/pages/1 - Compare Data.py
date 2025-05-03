@@ -153,9 +153,7 @@ all_isin = [isin1, isin2]
 
 # Button to fetch the maturity record
 if compare_button:
-    table_maturity_1 = get_element_data(isin1, "maturity")
-    table_maturity_2 = get_element_data(isin2, "maturity")
-
+    
     tables_maturity = {}
     tables_rating = {}
     tables_market = {}

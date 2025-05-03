@@ -15,7 +15,6 @@ from pipelines.transform.process_json_data import (extract_maturity,
                                                     extract_credit_rate,
                                                     extract_sector,
                                                     extract_portfolio_characteristics
-                                                    
                                                     )
 from pipelines.transform.convert_data_uniformization import clean_table
 

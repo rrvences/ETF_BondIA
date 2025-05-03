@@ -4,11 +4,12 @@ import yaml
 import pandas as pd
 from functools import partial
 from pipelines.general.filesystem_utils import CODE_PATH
-#CODE_PATH=''
+
 # Function to load JSON data
 def load_json(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
         return json.load(file)
+
 
 # Extract tables from 'items' field
 def extract_tables(data, mode='all', heading=''):
@@ -32,6 +33,7 @@ def extract_tables(data, mode='all', heading=''):
             return -1
         else:
             return tables[heading]
+
 
 def process_table(data, heading):
     """Process one table from the json, the one that is after the heading
@@ -103,7 +105,6 @@ def convert_dict(table):
     return table_dict  # Return the constructed dictionary
 
 
-    
 def extract_fields(data):
     fields = {}
     last_heading = None
@@ -129,6 +130,7 @@ def extract_data_performance(json_file_path: str, field: str):
     print(f'Success finding table for {field}: {json_table}')
     return convert_dict_performance(json_table)
 
+
 # Create partial functions for each specific extraction
 extract_year_performance = partial(extract_data_performance, field="12-month Performance")
 extract_market_allocation = partial(extract_data, field="Market Allocation")
@@ -138,27 +140,3 @@ extract_annualised_performance = partial(extract_data_performance, field="Annual
 extract_maturity = partial(extract_data, field= "Maturity Breakdown")
 extract_portfolio_characteristics = partial(extract_data, field="Portfolio Characteristics")
 
-
-if __name__ == '__main__':
-
-    i = 1
-    json_file = 'C:\\Users\\Mariana (pessoal)\\dev\\ETF_BondIA\\pipelines\\ref_data\\example.json'
-    data = load_json(json_file)
-    
-    # json_table = extract_maturity(json_file)
-    # print(f"\n table_maturity_{i} = ", json_table)
-
-    # json_table = extract_credit_rate(json_file)
-    # print(f"\n table_rating_{i} = ", json_table)
-    
-    # json_table = extract_sector(json_file)
-    # print(f"\n table_sector_{i} = ", json_table)
-
-    # json_table = extract_annualised_performance(json_file)
-    # print(f"\n table_performance_{i} = ", json_table)
-
-    json_table = extract_portfolio_characteristics(json_file)
-    print(f"\n table_portfolio_{i} = ", json_table)
-
-    # json_table = extract_year_performance(json_file)
-    # print(f"\n table_year_{i} = ", json_table)
