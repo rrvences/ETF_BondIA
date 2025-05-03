@@ -8,6 +8,10 @@ RUN pip install -r requirements.txt
 
 COPY BondIA.py .
 
+COPY /.streamlit /app/.streamlit
+
 COPY /pages /app/pages
+
+EXPOSE 8501
 
 CMD ["streamlit", "run", "BondIA.py", "--server.port=8501", "--server.address=0.0.0.0"]
