@@ -4,7 +4,7 @@ import yaml
 import pandas as pd
 from functools import partial
 from pipelines.general.filesystem_utils import CODE_PATH
-
+#CODE_PATH=''
 # Function to load JSON data
 def load_json(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
@@ -141,15 +141,12 @@ extract_portfolio_characteristics = partial(extract_data, field="Portfolio Chara
 
 if __name__ == '__main__':
 
-    json_dir = os.path.join(os.getcwd(), 'files', 'json')
     i = 1
-    for file in os.listdir(json_dir):
-        
-        json_file = os.path.join(json_dir, file)
-        data = load_json(json_file)
-        
-        # json_table = extract_maturity(json_file)
-        # print(f"\n table_maturity_{i} = ", json_table)
+    json_file = 'C:\\Users\\Mariana (pessoal)\\dev\\ETF_BondIA\\pipelines\\ref_data\\example.json'
+    data = load_json(json_file)
+    
+    # json_table = extract_maturity(json_file)
+    # print(f"\n table_maturity_{i} = ", json_table)
 
     # json_table = extract_credit_rate(json_file)
     # print(f"\n table_rating_{i} = ", json_table)
@@ -166,13 +163,11 @@ if __name__ == '__main__':
     # json_table = extract_year_performance(json_file)
     # print(f"\n table_year_{i} = ", json_table)
 
-        json_table = extract_annualised_performance(json_file)
-        print(f"\n table_performance_{i} = ", json_table)
+    # json_table = extract_annualised_performance(json_file)
+    # print(f"\n table_performance_{i} = ", json_table)
 
-        json_table = extract_portfolio_characteristics(json_file)
-        print(f"\n table_portfolio_{i} = ", json_table)
+    json_table = extract_portfolio_characteristics(json_file)
+    print(f"\n table_portfolio_{i} = ", json_table)
 
-        json_table = extract_year_performance(json_file)
-        print(f"\n table_year_{i} = ", json_table)
-
-        i += 1
+    # json_table = extract_year_performance(json_file)
+    # print(f"\n table_year_{i} = ", json_table)
