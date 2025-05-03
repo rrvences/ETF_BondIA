@@ -24,17 +24,13 @@ def get_element_data_as_df(isin, element):
     else:
         st.error("Error fetching record from the server.")
         return pd.DataFrame()  # Return an empty DataFrame on error
-    
-
 
     return pd.DataFrame(record)
 
 # Streamlit app
 st.title("Element Price Comparison")
 
-# Load initial DataFrame (assuming you have a CSV or some data source)
-# df = pd.read_csv('your_data.csv')  # Uncomment and modify this line to load your data
-# For demonstration, let's create a sample DataFrame
+
 list_of_isins = requests.get(f"{FASTAPI_URL}/json-records").json()
 
 # Select box for elements
@@ -76,11 +72,6 @@ if selected_elements:
 
     
 
-    # Display profile info for selected elements
-    #st.subheader("Profile Information")
-    #for element in selected_elements:
-    #    profile_info = info_df[info_df['isin'] == element]['Profile Info'].values[0]
-    #    st.write(f"{element}: {profile_info}")
 
 # Run the app
 if __name__ == "__main__":
