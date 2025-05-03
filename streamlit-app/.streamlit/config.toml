@@ -3,5 +3,5 @@ showErrorDetails = false
 
 [theme]
 base="dark"
-primaryColor="blue"
+primaryColor="rgb(46, 204, 113)"
 font="serif"

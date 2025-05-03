@@ -7,12 +7,10 @@ from streamlit_pdf_viewer import pdf_viewer
 # Set the page configuration
 st.set_page_config(page_title="BondIA Comparator", page_icon="⚔️", layout="wide")
 
-st.title("Compare ETF BondIA")
+st.title("Bond ETFs Overview")
 
 FASTAPI_URL = "http://fastapi-app:8000"
 
-# Create a sidebar for the app
-sidebar = st.sidebar
 
 
 json_records = requests.get(f"{FASTAPI_URL}/json-records").json()
@@ -46,10 +44,23 @@ def read_pdf_content(isin: str):
     return pdf_content
 
 
+# Text input for name filter
+name_filter = st.text_input("Enter name to filter:")
+
+
+
 # Fetch and display records
 df = fetch_available_records()
 
+# Filter DataFrame based on input (case-insensitive)
+if name_filter:
+    df = df[df['name'].str.contains(name_filter, case=False, na=False)]
+
+
 df.set_index("isin", inplace=True)
+
+
+
 # Display the DataFrame
 event_df = st.dataframe(
     df, use_container_width=True, on_select="rerun", selection_mode="single-row"
@@ -120,14 +131,7 @@ if selected_row is not None:
             mime="application/pdf",  # MIME type for PDF
         )
 else:
-    st.warning("Please select a row from the DataFrame.")
-
-
-list_of_isins = requests.get(f"{FASTAPI_URL}/json-records").json()
-
-isin1 = sidebar.selectbox("Isin1", list_of_isins)
-isin2 = sidebar.selectbox("Isin2", list_of_isins)
-compare_button = sidebar.button("Compare")
+    st.warning("Please select a row from the DataFrame to perform actions")
 
 
 def get_element_data(isin, element):
@@ -165,79 +169,3 @@ def clean_keys(table):
     }
 
     return table
-
-
-# Button to fetch the maturity record
-if compare_button:
-    table_maturity_1 = get_element_data(isin1, "maturity")
-    table_maturity_2 = get_element_data(isin2, "maturity")
-
-    table_rating_1 = get_element_data(isin1, "credit_rate")
-    table_rating_2 = get_element_data(isin2, "credit_rate")
-
-    table_market_1 = get_element_data(isin1, "market_allocation")
-    table_market_2 = get_element_data(isin2, "market_allocation")
-
-    # Maturity
-    df1, df2, df_merged = clean_tables(
-        clean_keys(table_maturity_1), clean_keys(table_maturity_2), element="Maturity"
-    )
-    # Plot Comparison
-    st.write("### Maturity Distribution Comparison")
-    fig = px.bar(
-        df_merged.melt(id_vars=["Maturity"], var_name="Table", value_name="Percentage"),
-        x="Maturity",
-        y="Percentage",
-        color="Table",
-        barmode="group",
-        title="Comparison of Maturity Distributions",
-    )
-    st.plotly_chart(fig)
-
-    ### RATING
-    df1, df2, df_merged = clean_tables(
-        clean_keys(table_rating_1), clean_keys(table_rating_2), element="Rating"
-    )
-
-    # Plot Rating Breakdown
-    st.write("### Rating Breakdown Comparison")
-    fig_rating = px.bar(
-        df_merged.melt(id_vars=["Rating"], var_name="Table", value_name="Percentage"),
-        x="Rating",
-        y="Percentage",
-        color="Table",
-        barmode="group",
-        title="Comparison of Rating Breakdown",
-    )
-
-    fig_rating.update_layout(
-        barmode="group",
-        bargap=0.15,  # gap between bars of adjacent location coordinates.
-        bargroupgap=0.1,  # gap between bars of the same location coordinate.
-    )
-    st.plotly_chart(fig_rating)
-
-    ### MARKET ALLOCATION
-    # Standardizing Country Names (Removing extra words for consistency)
-
-    df1, df2, df_market_merged = clean_tables(
-        clean_keys(table_market_1), clean_keys(table_market_2), element="Country"
-    )
-    # Sort by first dataset for better comparison
-    df_market_merged = df_market_merged.sort_values(by="Value 1", ascending=False)
-
-    # Plot
-    st.write("### Market Allocation Comparison")
-    fig_market = px.bar(
-        df_market_merged.melt(
-            id_vars=["Country"], var_name="Table", value_name="Percentage"
-        ),
-        y="Country",
-        x="Percentage",
-        color="Table",
-        barmode="group",
-        title="Comparison of Market Allocation",
-        orientation="h",
-    )  # Horizontal bars
-
-    st.plotly_chart(fig_market)
