@@ -29,14 +29,26 @@ class MongoDBUtils:
     def retrieve_record(self, collection_name: str, query: Dict[str, Any]):
         """Retrieve a record from a specified collection, excluding the _id field."""
         collection = self.db[collection_name]
-        record = collection.find_one(query, {"_id": 0})
-        return self.serialize_record(record)
+        records = collection.find(query, {"_id": 0})
+        return [self.serialize_record(record) for record in records]
 
     def record_exists(self, collection_name: str, query: Dict[str, Any]) -> bool:
         """Check if a record exists in a specified collection."""
         collection = self.db[collection_name]
         return collection.count_documents(query) > 0
     
+    def drop_collection(self, collection_name: str):
+        """Drop the specified collection from the database."""
+        collection = self.db[collection_name]
+        collection.drop()  # Drop the collection
+
+
+    def clear_collection(self, collection_name: str):
+        """Clear all documents from the specified collection."""
+        collection = self.db[collection_name]
+        result = collection.delete_many({})  # Delete all documents
+        return result.deleted_count
+
     def upsert_record(self, collection_name: str, record: Dict[str, Any], key_field: Union[str, List[str]]):
         """
         Upsert a record into a specified collection.
@@ -50,7 +62,7 @@ class MongoDBUtils:
         collection = self.db[collection_name]
 
         # Create an index on the 'isin' field if it doesn't exist
-        collection.create_index([(key_field[0], ASCENDING)], unique=True)
+        collection.create_index([(field, ASCENDING) for field in key_field], unique=True)
 
         collection = self.db[collection_name]
 
@@ -85,9 +97,12 @@ if __name__ == "__main__":
 
     record = {
         "isin": "US0378331005",  # Example ISIN
+        "date": "Timestamp('2025-04-15 00:00:00+0200', tz='Europe/Berlin')",
         "name": "Apple Inc.",
         "price": 150.00
     }
 
-    result = mongodb.upsert_record("test_1", record,"isin")
+    result = mongodb.upsert_record("test_3", record,["isin","date"])
     print(result)
+    #print(mongodb.retrieve_record("etf_daily_prices123554",{"isin":"IE00BZ163G84"}))
+    #mongodb.drop_collection("etf_daily_prices")

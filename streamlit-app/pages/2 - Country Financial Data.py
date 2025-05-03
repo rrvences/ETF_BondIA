@@ -5,19 +5,21 @@ import requests
 
 # Set the page configuration
 st.set_page_config(
-    page_title="BondIA Country Financial Data", 
-    page_icon="",      
-    layout="wide"        
+    page_title="BondIA Country Financial Data", page_icon="", layout="wide"
 )
 
 FASTAPI_URL = "http://fastapi-app:8000"
 
 
 # Create DataFrames
-credit_rates_df = pd.DataFrame(requests.get(f"{FASTAPI_URL}/country_list_ratings").json())
+credit_rates_df = pd.DataFrame(
+    requests.get(f"{FASTAPI_URL}/country_list_ratings").json()
+)
 interest_rates_df = pd.DataFrame(requests.get(f"{FASTAPI_URL}/interest_rates").json())
 debt_to_gdp_df = pd.DataFrame(requests.get(f"{FASTAPI_URL}/country_debt_to_gdp").json())
-credit_rates_guide_df =pd.DataFrame(requests.get(f"{FASTAPI_URL}/credit_ratings_guide").json())
+credit_rates_guide_df = pd.DataFrame(
+    requests.get(f"{FASTAPI_URL}/credit_ratings_guide").json()
+)
 
 
 # Streamlit app
@@ -38,15 +40,17 @@ with tab1:
 # Interest Rates Tab
 with tab2:
     st.header("Country Interest Rates")
-    
+
     # Create a word map for credit rates
-    fig = px.choropleth(debt_to_gdp_df,
-                        locations="Country",
-                        locationmode='country names',
-                        color="Last",
-                        hover_name="Country",
-                        color_continuous_scale=px.colors.sequential.Plasma,
-                        title="Interest Rates by Country")
+    fig = px.choropleth(
+        debt_to_gdp_df,
+        locations="Country",
+        locationmode="country names",
+        color="Last",
+        hover_name="Country",
+        color_continuous_scale=px.colors.sequential.Plasma,
+        title="Interest Rates by Country",
+    )
 
     st.plotly_chart(fig)
     st.dataframe(interest_rates_df)
@@ -54,16 +58,17 @@ with tab2:
 # Debt to GDP Tab
 with tab3:
     st.header("Country Debt to GDP")
-    
 
     # Create a word map for credit rates
-    fig = px.choropleth(debt_to_gdp_df,
-                        locations="Country",
-                        locationmode='country names',
-                        color="Last",
-                        hover_name="Country",
-                        color_continuous_scale=px.colors.sequential.Plasma,
-                        title="Interest Rates by Country")
-    
+    fig = px.choropleth(
+        debt_to_gdp_df,
+        locations="Country",
+        locationmode="country names",
+        color="Last",
+        hover_name="Country",
+        color_continuous_scale=px.colors.sequential.Plasma,
+        title="Interest Rates by Country",
+    )
+
     st.plotly_chart(fig)
     st.dataframe(debt_to_gdp_df)

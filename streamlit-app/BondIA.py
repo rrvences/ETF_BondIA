@@ -1,126 +1,23 @@
 import streamlit as st
-from streamlit_pdf_viewer import pdf_viewer
-import pandas as pd
-import requests
-
-# Set the page configuration
-st.set_page_config(
-    page_title="BondIA", 
-    page_icon="📈",      
-    layout="wide"        
-)
-
-# Create a sidebar for the app
-sidebar = st.sidebar
-
-FASTAPI_URL = "http://fastapi-app:8000"
 
 
-json_records = requests.get(f"{FASTAPI_URL}/json-records").json()
-pdf_records = requests.get(f"{FASTAPI_URL}/pdf-records").json()
+# Introduction
+st.markdown("""
+Welcome to the **ETF Bonds** page — your guide to understanding how Exchange-Traded Funds (ETFs) can be used to invest in bonds. 
+ETF bonds combine the benefits of **bond investing** with the **flexibility of ETFs**, making it easier and more accessible to investors seeking exposure to the bond market.
+""")
 
-
-def fetch_available_records():
-    # Call the FastAPI endpoint
-    get_avaliable_records = requests.get(f"{FASTAPI_URL}/records")
-
-    if get_avaliable_records.status_code == 200:
-        records = get_avaliable_records.json()
-        # Convert the list of dictionaries to a DataFrame
-        df = pd.DataFrame(records)
-
-        # Create new columns for JSON and PDF with icons
-        df['JSON'] = df['isin'].apply(lambda x: '✅' if x in json_records else '')
-        df['PDF'] = df['isin'].apply(lambda x: '✅' if x in pdf_records else '')
-    
-        return df
-
-    else:
-        
-        st.error("Error fetching records from the server.")
-        return pd.DataFrame()
-
-
-
-def read_pdf_content(isin:str):
-    pdf_response = requests.get(f"{FASTAPI_URL}/read_pdf?isin={isin}")
-    if pdf_response.status_code == 200:
-        pdf_content = pdf_response.content
-    return pdf_content
-
-# Function to toggle the visibility of info sections
-def toggle_info(info_key):
-    if info_key not in st.session_state:
-        st.session_state[info_key] = False
-    st.session_state[info_key] = not st.session_state[info_key]
-
-
-def main():
-
-    # Fetch and display records
-    df = fetch_available_records()
-
-    df.set_index('isin',inplace=True)
-    # Display the DataFrame
-    event_df = st.dataframe(df, use_container_width=True,on_select='rerun', selection_mode = 'single-row')
-
-
-    if event_df.get("selection",{}).get("rows"):
-        selected_row = df.iloc[event_df.get("selection",{}).get("rows")].index[0] 
-    else:
-        selected_row = None
-
-     # Check if a row is selected
-    if selected_row is not None:
-
-        # Get the selected row's index
-        selected_isin = selected_row  # Get the ISIN of the selected row
-
-        options = ["Process Factsheet","Get Prices and Details"]
-
-        if selected_isin in pdf_records:
-            options.extend(["View PDF"])
-
-        # Choose an action
-        action = st.selectbox("Choose an action", options)
-
-        if st.button("Perform Action"):
-            if action == "View PDF":
-                try:
-                    pdf_viewer(read_pdf_content(selected_isin))  # Assuming this function displays the PDF
-                except Exception:
-                    st.error("Failed to fetch PDF. Please try again.")
+# **What Are ETF Bonds?**
+st.markdown("""
             
-            if action == "Get Prices and Details":
-                try:
-                   with st.spinner("Processing... Please wait."):
-                    prices_response = requests.post(f"{FASTAPI_URL}/extract_info?isin={selected_isin}")
-                    dividens_response = requests.post(f"{FASTAPI_URL}/extract_prices?isin={selected_isin}")
-                    info_response = requests.post(f"{FASTAPI_URL}/extract_dividends?isin={selected_isin}")
-                    st.text(prices_response.text)
-                    st.text(dividens_response.text)
-                    st.text(info_response.text)
-                except Exception:
-                    st.error("Failed to fetch PDF. Please try again.")
+    ###        :moneybag: **What are bonds?**
+            
+A **bond** is a type of loan. When you buy a bond, you're lending money to a **government**, **corporation**, or other entity in exchange for:
 
-            elif action == "Process Factsheet":
-                # Show a spinner while processing the request
-                with st.spinner("Processing... Please wait."):
-                    process_response = requests.post(f"{FASTAPI_URL}/process", json={"isin": selected_isin})
-                    st.text(process_response.text)
+- **Regular interest payments** (called coupons)
+- **Repayment of the full amount** at the end of the bond's term (called maturity)
 
-            else:
-                st.warning("Please select a valid action.")
-
-        if selected_isin in pdf_records:
-            st.download_button(
-                label="Download PDF",
-                data=read_pdf_content(selected_isin),
-                file_name=f"{selected_isin}_factsheet.pdf",  # Use the selected ISIN for the file name
-                mime="application/pdf"  # MIME type for PDF
-            )
-    else:
-        st.warning("Please select a row from the DataFrame.")
+Bonds are considered **fixed income investments** because they typically offer steady, predictable returns.
 
         # Introduction
     st.markdown("""
@@ -278,5 +175,143 @@ def main():
 
 
 
-if __name__ == "__main__":
-    main()
+### 🧐 **What Are ETF Bonds?**
+
+**ETF Bonds** (Exchange-Traded Funds for Bonds) are a type of **investment fund** that holds a **diversified portfolio of bonds** and is traded on a stock exchange. Just like stock ETFs, bond ETFs are bought and sold throughout the day, providing liquidity and flexibility.
+
+Here’s what makes **ETF Bonds** attractive:
+- **Diversification**: Bond ETFs hold a wide variety of bonds in their portfolio, allowing you to gain exposure to **different issuers**, **sectors**, and **maturity dates**. 
+- **Liquidity**: Since ETF bonds trade on exchanges, you can **buy and sell** them like stocks, offering more liquidity compared to traditional bonds.
+- **Low Fees**: Bond ETFs generally have **lower management fees** than actively managed bond funds, as they track an index of bonds.
+- **Ease of Access**: Investors can gain bond exposure with as little as one share of an ETF, making it easier for small investors to access the bond market.
+- **Income Generation**: Bond ETFs typically pay **interest income** (from the underlying bonds) to shareholders, distributed on a **monthly or quarterly basis**.
+
+---
+
+### 📈 **Why Invest in ETF Bonds?**
+
+- **Diversified Bond Exposure**: Instead of buying individual bonds, bond ETFs allow you to invest in a broad **portfolio of bonds** in one single trade.
+- **Flexibility and Liquidity**: Like stocks, you can buy and sell ETF bonds throughout the trading day, which gives you more control over your investment compared to traditional bonds that might require you to hold them to maturity.
+- **Lower Risk**: Since bond ETFs invest in multiple bonds, they offer **greater diversification** compared to holding a single bond, which can help mitigate the impact of credit or interest rate risk.
+- **Income Stream**: If you're looking for regular income, ETF bonds can offer **steady coupon payments**, which are passed on to ETF shareholders.
+
+---
+
+### 📅 **How Do ETF Bonds Work?**
+
+- **Investment Strategy**: Bond ETFs typically track a **bond index**, such as the **Barclays Capital U.S. Aggregate Bond Index** or **J.P. Morgan Emerging Markets Bond Index**. These indexes represent a large portion of the bond market, giving ETF investors broad exposure.
+  
+- **Reinvestment**: The interest generated by the bonds in the ETF portfolio is typically **distributed to investors** in the form of **monthly or quarterly dividends**. 
+
+- **Capital Appreciation**: In addition to interest income, bond ETFs may experience **capital appreciation** or depreciation, depending on changes in interest rates and the overall bond market.
+
+---
+
+### 🏦 **Types of ETF Bonds**
+
+There are several types of bond ETFs, each with its own focus and investment strategy:
+
+- **Treasury Bond ETFs**: These ETFs invest in government bonds, typically with very low risk and low yield. Examples: **iShares 20+ Year Treasury Bond ETF (TLT)**.
+- **Corporate Bond ETFs**: These ETFs invest in bonds issued by corporations. They usually offer higher yields than government bonds but come with higher risk. Examples: **Vanguard Total Corporate Bond ETF (VTC)**.
+- **High-Yield Bond ETFs**: These ETFs focus on bonds with lower credit ratings (junk bonds), offering higher yields but greater risk. Examples: **SPDR Bloomberg Barclays High Yield Bond ETF (JNK)**.
+- **Municipal Bond ETFs**: These ETFs invest in bonds issued by state and local governments, often tax-exempt. Examples: **Vanguard Tax-Exempt Bond ETF (VTEB)**.
+- **Emerging Markets Bond ETFs**: These ETFs invest in bonds from emerging markets and offer higher returns along with higher risk. Examples: **iShares J.P. Morgan EM Local Currency Bond ETF (LEMB)**.
+
+---
+
+### 💡 **Pros and Cons of ETF Bonds**
+
+**Pros**:
+- **Accessibility**: ETFs allow small investors to diversify their bond holdings without needing significant capital.
+- **Liquidity**: Bond ETFs trade on the open market, allowing for **instant buy and sell orders** during market hours.
+- **Cost-Efficiency**: Most bond ETFs have low expense ratios, making them a cost-effective way to invest in bonds.
+
+**Cons**:
+- **Interest Rate Risk**: Bond ETFs are still subject to **interest rate risk**, meaning if rates rise, bond prices (and the value of the ETF) may fall.
+- **Credit Risk**: Some bond ETFs, especially those focused on high-yield or corporate bonds, can carry **credit risk** if the underlying bonds default.
+- **Market Volatility**: While bond ETFs are generally less volatile than stocks, they can still experience price fluctuations based on market conditions.
+
+---
+
+### 📊 **ETF Bond Strategy**
+
+When building your bond portfolio, consider mixing **Treasury Bond ETFs** for stability with **Corporate Bond ETFs** for higher yield. If you have a longer-term horizon, you might opt for **Long-Term Treasury ETFs** for price appreciation potential.
+
+---
+
+### 🚀 **Conclusion**
+
+**ETF bonds** are an excellent way to gain diversified exposure to the bond market with the flexibility and liquidity of **ETFs**. They are a solid choice for both conservative and more aggressive investors, depending on the mix of bonds in the ETF.
+
+By understanding how ETF bonds work, their different types, and their pros and cons, you can make informed decisions about whether they’re the right choice for your investment portfolio.
+""")
+
+# Function to toggle the visibility of info sections
+def toggle_info(info_key):
+    if info_key not in st.session_state:
+        st.session_state[info_key] = False
+    st.session_state[info_key] = not st.session_state[info_key]
+
+st.markdown("""
+    ### :information_source: More Info
+""")
+
+text=rf"""
+:rain_cloud: **Accumulating** vs **Distributing** Funds"""
+
+with st.expander(text, expanded=False):
+    st.info("""
+       **Accumulating Funds**:
+- The income (interest/dividends) generated by the fund is automatically **reinvested** into the fund.
+- This leads to **compounding growth**, ideal for long-term investors who seek growth over time.
+
+**Distributing Funds**:
+- The income generated by the fund is **paid out** to investors on a regular basis (e.g., monthly, quarterly).
+- This is ideal for investors seeking **regular income** from their investments, such as retirees or income-focused investors.
+
+#### Comparison at a Glance:
+
+| Feature               | Accumulating Funds            | Distributing Funds         |
+|-----------------------|--------------------------------|----------------------------|
+| **Income Handling**    | Reinvests income automatically | Pays out income to investors |
+| **Growth**             | Faster growth (compounding)    | Slower growth (income paid out) |
+| **Investor Benefit**   | Capital growth over time       | Regular income, often for cash flow |
+| **Suitable For**       | Long-term investors, growth-focused | Investors needing steady income (e.g., retirees) |
+
+    """)
+    
+with st.expander(":money_with_wings: What is **Dividend Yield**?", expanded=False):
+    st.info("""
+
+The **Dividend Yield** of a Bond ETF is the annual income (interest payments) generated by the bonds held in the fund, expressed as a percentage of the ETF's current market price. It provides a way to measure the income you can expect from your investment in a Bond ETF, relative to its current price.
+
+The yield can fluctuate based on several factors, including **interest rates**, **bond types**, and overall **market conditions**.
+
+Here's how the Dividend Yield behaves in different market conditions:
+
+| **Market Condition**         | **Behavior of Dividend Yield**                                         | **Key Impact on Investors**                                                                 |
+|------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Rising Interest Rates        | Yield increases as ETF price decreases.                                | Higher yield, but potential capital loss on ETF price.                                     |
+| Falling Interest Rates       | Yield decreases as ETF price increases.                                | Lower yield, but potential capital gain on ETF price.                                      |
+| Stable Interest Rates        | Stable yield reflecting market rates.                                  | Consistent income with less price volatility.                                               |
+| High-Yield Bonds             | Higher yield due to risk, more volatility.                             | Higher potential income but higher risk and volatility.                                    |
+| Corporate Bonds              | Variable yield depending on economic conditions.                       | Higher yield with more credit risk and market sensitivity.                                 |
+| Inflation-Protected Bonds    | Yield increases as inflation rises.                                    | Higher yield during inflation periods with protection against inflation.                   |
+""")
+
+with st.expander(":warning: What happens during **inflation**, **deflation** & **volatile markets**?"):
+
+    st.info("""
+### 📉 **ETF Bonds in Different Market Conditions**
+
+- **Inflation**:  
+  In periods of inflation, bond prices typically **fall** as interest rates rise. Since most bond ETFs track broad indices of bonds, they may experience price declines during inflationary periods. However, **inflation-protected bond ETFs** (such as those that invest in **TIPS**—Treasury Inflation-Protected Securities) can perform better as they are specifically designed to adjust with inflation, offering some protection against rising prices.
+
+- **Deflation**:  
+  During deflation, when the economy is shrinking and prices are falling, bond prices usually **rise** as interest rates are often reduced to stimulate growth. Bond ETFs, especially those with long-duration bonds, may benefit in deflationary periods, as lower rates increase the value of existing bonds.
+
+- **Volatile Markets**:  
+  In volatile markets, ETF bond prices can fluctuate based on investor sentiment, interest rate changes, and economic conditions. **Corporate bond ETFs** might see more volatility compared to **government bond ETFs**, as corporate bonds carry more credit risk. **High-yield bond ETFs** are especially sensitive to market volatility, as their lower credit quality makes them more susceptible to economic downturns.
+
+
+""")
