@@ -7,12 +7,10 @@ from streamlit_pdf_viewer import pdf_viewer
 # Set the page configuration
 st.set_page_config(page_title="BondIA Comparator", page_icon="⚔️", layout="wide")
 
-st.title("Compare ETF BondIA")
+st.title("Bond ETFs Overview")
 
 FASTAPI_URL = "http://fastapi-app:8000"
 
-# Create a sidebar for the app
-sidebar = st.sidebar
 
 
 json_records = requests.get(f"{FASTAPI_URL}/json-records").json()
@@ -46,10 +44,23 @@ def read_pdf_content(isin: str):
     return pdf_content
 
 
+# Text input for name filter
+name_filter = st.text_input("Enter name to filter:")
+
+
+
 # Fetch and display records
 df = fetch_available_records()
 
+# Filter DataFrame based on input (case-insensitive)
+if name_filter:
+    df = df[df['name'].str.contains(name_filter, case=False, na=False)]
+
+
 df.set_index("isin", inplace=True)
+
+
+
 # Display the DataFrame
 event_df = st.dataframe(
     df, use_container_width=True, on_select="rerun", selection_mode="single-row"
@@ -120,14 +131,7 @@ if selected_row is not None:
             mime="application/pdf",  # MIME type for PDF
         )
 else:
-    st.warning("Please select a row from the DataFrame.")
-
-
-list_of_isins = requests.get(f"{FASTAPI_URL}/json-records").json()
-
-isin1 = sidebar.selectbox("Isin1", list_of_isins)
-isin2 = sidebar.selectbox("Isin2", list_of_isins)
-compare_button = sidebar.button("Compare")
+    st.warning("Please select a row from the DataFrame to perform actions")
 
 
 def get_element_data(isin, element):
@@ -144,26 +148,31 @@ def get_element_data(isin, element):
     return record[element]
 
 
-def merge_tables(tables, element):
+def clean_tables(table_1, table_2, element):
+    # Convert to DataFrame
+    df1 = pd.DataFrame(list(table_1.items()), columns=[element, "Value 1"])
+    df2 = pd.DataFrame(list(table_2.items()), columns=[element, "Value 2"])
+
+
+    # Convert values to numeric
+    df1["Value 1"] = df1["Value 1"].replace("%", "", regex=True).astype(float)
+    df2["Value 2"] = df2["Value 2"].replace("%", "", regex=True).astype(float)
 
     tables_df = [pd.DataFrame(list(tables[isin].items()), columns=[element, isin]) for isin in tables.keys()]
     return pd.concat(tables_df)
 
-all_isin = [isin1, isin2]
 
-# Button to fetch the maturity record
-if compare_button:
-    
-    tables_maturity = {}
-    tables_rating = {}
-    tables_market = {}
-    tables_portfolio = {}
-    
-    for isin in all_isin:
-        tables_maturity[isin] = get_element_data(isin, "maturity")
-        tables_rating[isin] = get_element_data(isin, "credit_rate")
-        tables_market[isin] = get_element_data(isin, "market_allocation")
-        tables_portfolio[isin] = get_element_data(isin, "portfolio")
+    df_merged = pd.merge(df1, df2, on=element, how="outer").fillna(0)
+    return df1, df2, df_merged
+
+
+def clean_keys(table):
+    table = {
+        key.split(" ")[0].capitalize(): value
+        for key, value in table.items()
+        if "Total" not in key and "Derivatives" not in key
+    }
+
 
     df_merged = merge_tables(tables_portfolio, element='Portfolio')
     st.dataframe(df_merged)
@@ -214,3 +223,20 @@ if compare_button:
                         orientation='h')  # Horizontal bars
 
     
+
+    # Convert values to numeric
+    df1["Value 1"] = df1["Value 1"].replace("%", "", regex=True).astype(float)
+    df2["Value 2"] = df2["Value 2"].replace("%", "", regex=True).astype(float)
+
+    df_merged = pd.merge(df1, df2, on=element, how="outer").fillna(0)
+    return df1, df2, df_merged
+
+
+def clean_keys(table):
+    table = {
+        key.split(" ")[0].capitalize(): value
+        for key, value in table.items()
+        if "Total" not in key and "Derivatives" not in key
+    }
+
+    return table

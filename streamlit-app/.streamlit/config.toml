@@ -1,0 +1,7 @@
+[client]
+showErrorDetails = false
+
+[theme]
+base="dark"
+primaryColor="rgb(46, 204, 113)"
+font="serif"
