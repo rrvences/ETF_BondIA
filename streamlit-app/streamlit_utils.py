@@ -53,11 +53,17 @@ def get_ref_data_as_df(endpoint: str) -> pd.DataFrame:
     return pd.DataFrame(data) if data and "error" not in data else pd.DataFrame()
 
 
+def list_of_pdfs_available() -> list:
+    """Get a list of available ISINs"""
+    url = f"{FASTAPI_URL}/pdf-records"
+    data = fetch_data(url)
+    return data
+
 def list_of_isins_available() -> list:
     """Get a list of available ISINs"""
     url = f"{FASTAPI_URL}/json-records"
     data = fetch_data(url)
-    return list(data.keys()) if data else []
+    return data
 
 def read_pdf_content(isin: str):
     pdf_response = requests.get(f"{FASTAPI_URL}/read_pdf?isin={isin}")

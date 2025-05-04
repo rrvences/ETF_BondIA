@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from streamlit_pdf_viewer import pdf_viewer
-from streamlit_utils import get_ref_data_as_df, read_pdf_content, get_collection_data_as_df, FASTAPI_URL
+from streamlit_utils import get_ref_data_as_df, read_pdf_content, get_collection_data_as_df, FASTAPI_URL, list_of_pdfs_available
 
 # Set the page configuration
 st.set_page_config(page_title="BondIA Comparator", page_icon="⚔️", layout="wide")
@@ -13,11 +13,26 @@ st.title("Bond ETFs Overview")
 name_filter = st.text_input("Enter name to filter:")
 
 # Fetch and display records
-df = get_ref_data_as_df("etfs_list")
+df_etfs_list = get_ref_data_as_df("etfs_list")
 df_etf_info_status = get_collection_data_as_df("etf_info_status")
 
 
-st.dataframe(df_etf_info_status)
+def status_check(group):
+    return "Succeeded" if (group['status'] == "Succeeded").all() else "Error Processing"
+
+df_etf_info_status_grouped = (
+    df_etf_info_status
+    .groupby('isin')
+    .apply(status_check)
+    .reset_index(name='status_result')
+)
+
+
+df = (
+    df_etfs_list
+    .merge(df_etf_info_status_grouped, on='isin', how='left')
+    .fillna({'status_result': "No Process attempt"})
+)
 
 # Filter DataFrame based on input (case-insensitive)
 if name_filter:
@@ -25,8 +40,8 @@ if name_filter:
 
 
 df.set_index("isin", inplace=True)
-#df.sort_values(by="Status",inplace=True)
-pdf_records = []
+df.sort_values(by="status_result",inplace=True)
+pdf_records = list_of_pdfs_available()
 
 # Display the DataFrame
 event_df = st.dataframe(
@@ -45,6 +60,9 @@ if selected_row is not None:
     selected_isin = selected_row  # Get the ISIN of the selected row
 
     options = ["Process Factsheet", "Get Prices and Details"]
+
+    df_etf_info_status.query(f" isin == '{selected_isin}' ")
+
 
     if selected_isin in pdf_records:
         options.extend(["View PDF"])

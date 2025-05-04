@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from streamlit_utils import get_element_data_as_df, list_of_isins_available
+from streamlit_utils import get_etf_element_data_as_df, list_of_isins_available
 
 # Set the page configuration
 st.set_page_config(
@@ -32,7 +32,7 @@ if selected_elements:
 fig = go.Figure()
 
 for element in selected_elements:
-    prices_df = get_element_data_as_df(element, "etf_daily_prices")
+    prices_df = get_etf_element_data_as_df(element, "etf_daily_prices")
     #info_df = get_element_data_as_df(element, "etf_info")
     
     # Only add a line if both dataframes are not empty
@@ -62,7 +62,7 @@ if fig.data:
 
 
 for element in selected_elements:
-    dividends_df = get_element_data_as_df(element, "etf_dividends_issued")
+    dividends_df = get_etf_element_data_as_df(element, "etf_dividends_issued")
     
     if dividends_df.empty:
         dividends_df = pd.DataFrame([{
