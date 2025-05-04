@@ -8,6 +8,7 @@ from pipelines.extraction.extract_etfs_details import get_etf_daily_prices, get_
 from pipelines.transform.parser_utils import parse_pdf_document, save_json_to_file
 from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
 from pipelines.mongo.mongo_utils import MongoDBUtils
+from pipelines.transform.convert_data_uniformization import clean_table
 from fastapi_utils import (
         make_csv_endpoint,
         extract_element_and_insert_into_mongo,
@@ -32,6 +33,19 @@ def get_element_data(isin: str, element:str):
 
     return record
 
+
+@app.get("/clean_element")
+def get_element_data_clean(isin:str, element:str):
+    mongodb = MongoDBUtils()
+    record = mongodb.retrieve_record(element,{"isin":isin})
+    
+    mongodb.close_connection()
+    if len(record) == 1:
+        record = {element: clean_table(record[0][element], element)}
+    else:
+        record = None
+    print(f'Fetching data: {record} \n ----')
+    return record 
 
 @app.get("/collection_data")
 def get_collection_data(collection_name:str):

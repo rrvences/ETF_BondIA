@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from streamlit_utils import get_etf_element_data_as_df, list_of_isins_available, get_collection_data_as_df
+from streamlit_utils import (get_etf_element_data_as_df, 
+                            list_of_isins_available, 
+                            get_collection_data_as_df,
+                            get_etf_element_data_clean,
+                            merge_tables
+                            )
 
 # Set the page configuration
 st.set_page_config(
@@ -17,6 +22,11 @@ st.title("ETFs Price Comparison")
 
 list_of_isins = list_of_isins_available()
 
+
+st.dataframe(get_collection_data_as_df("maturity"))
+st.dataframe(get_collection_data_as_df("credit_rate"))
+st.dataframe(get_collection_data_as_df("market_allocation"))
+st.dataframe(get_collection_data_as_df("portfolio"))
 
 # Select box for elements
 selected_etfs = st.multiselect(
@@ -77,36 +87,6 @@ for isin in selected_etfs:
     st.dataframe(dividends_df)
 
 
-def get_etf_element_data_clean(isin, element):
-    # Call the FastAPI endpoint with a GET request
-    response = requests.get(f"{FASTAPI_URL}/clean_element?isin={isin}&element={element}")
-
-    if response.status_code == 200:
-        record = response.json()
-        if not record:
-            return {}
-        else:
-            return record[element]
-
-    else:
-        st.error("Error fetching record from the server.")
-        return {}
-
-
-def merge_tables(tables, element):
-
-    tables_df = [pd.DataFrame(list(tables[isin].items()), columns=[element, isin]) for isin in tables.keys()]
-    return pd.concat(tables_df)
-
-
-if st.button("Process ISIN"):
-    for isin in selected_etfs:
-        process_response = requests.post(
-            f"{FASTAPI_URL}/process", json={"isin": isin}
-        )
-        st.text(f'Processing {isin}')
-        st.text(process_response.text)
-
 compare_button = True
 # Button to fetch the maturity record
 if compare_button and len(selected_etfs) > 0:
@@ -163,14 +143,15 @@ if compare_button and len(selected_etfs) > 0:
     # Standardizing Country Names (Removing extra words for consistency)
 
     df_merged = merge_tables(tables_market, element='Country')
-    # Plot
-    st.write("### Market Allocation Comparison")
-    st.dataframe(df_merged)
-    fig_market = px.bar(df_merged.melt(id_vars=['Country'], var_name='Table', value_name='Percentage'),
-                        y='Country', x='Percentage', color='Table', barmode='group',
-                        title="Comparison of Market Allocation",
-                        orientation='h')  # Horizontal bars
-    fig_market.update_layout(height=50*len(df_merged['Country']))
-    st.plotly_chart(fig_market)
+    if not df_merged.empty:
+        # Plot
+        st.write("### Market Allocation Comparison")
+        st.dataframe(df_merged)
+        fig_market = px.bar(df_merged.melt(id_vars=['Country'], var_name='Table', value_name='Percentage'),
+                            y='Country', x='Percentage', color='Table', barmode='group',
+                            title="Comparison of Market Allocation",
+                            orientation='h')  # Horizontal bars
+        fig_market.update_layout(height=50*len(df_merged['Country']))
+        st.plotly_chart(fig_market)
 
     

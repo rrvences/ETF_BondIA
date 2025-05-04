@@ -16,6 +16,9 @@ def fetch_data(url: str) -> Optional[dict]:
         st.error(f"API request failed: {str(e)}")
         return None
 
+
+
+
 def handle_element_response(response_data: dict) -> Union[dict, pd.DataFrame]:
     """Handles common element response processing"""
     if "error" in response_data:
@@ -34,6 +37,29 @@ def get_data(url: str) -> Optional[dict]:
         # Log the exception or handle it as needed
         print(f"Error fetching data from {url}: {e}")
         return None
+
+
+def get_etf_element_data_clean(isin, element):
+    # Call the FastAPI endpoint with a GET request
+    response = requests.get(f"{FASTAPI_URL}/clean_element?isin={isin}&element={element}")
+
+    if response.status_code == 200:
+        record = response.json()
+        if not record:
+            return {}
+        else:
+            return record[element]
+
+    else:
+        st.error("Error fetching record from the server.")
+        return {}
+
+
+def merge_tables(tables, element):
+
+    tables_df = [pd.DataFrame(list(tables[isin].items()), columns=[element, isin]) for isin in tables.keys()]
+    return pd.concat(tables_df)
+
 
 def get_element_data(isin: str, element: str) -> Optional[dict]:
     """Get specific element data for an ISIN."""

@@ -91,10 +91,10 @@ def extract_element_and_insert_into_mongo(
         # Extract data
         extracted_data = function_dict[element](json_save_path)
         if not extracted_data:
-            raise ValueError(f"No data extracted for {element} from {json_save_path}")
+            logging.error(f"No data extracted for {element} from {json_save_path}")
 
         # Prepare and upsert record
-        record_data = {"isin": isin, element: extracted_data}
+        record_data = {"isin": isin, element: extracted_data or {}}
         result = mongodb.upsert_record(
             collection_name=element,
             record=record_data,
