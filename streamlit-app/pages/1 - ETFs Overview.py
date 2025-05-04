@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import requests
 from streamlit_pdf_viewer import pdf_viewer
 from streamlit_utils import get_ref_data_as_df, read_pdf_content, get_collection_data_as_df, FASTAPI_URL, list_of_pdfs_available
@@ -16,6 +15,8 @@ name_filter = st.text_input("Enter name to filter:")
 df_etfs_list = get_ref_data_as_df("etfs_list")
 df_etf_info_status = get_collection_data_as_df("etf_info_status")
 
+
+st.dataframe(df_etf_info_status)
 
 def status_check(group):
     return "Succeeded" if (group['status'] == "Succeeded").all() else "Error Processing"
@@ -40,7 +41,7 @@ if name_filter:
 
 
 df.set_index("isin", inplace=True)
-df.sort_values(by="status_result",inplace=True)
+df.sort_values(by="status_result",ascending=True,inplace=True)
 pdf_records = list_of_pdfs_available()
 
 # Display the DataFrame

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from streamlit_utils import get_etf_element_data_as_df, list_of_isins_available
+from streamlit_utils import get_etf_element_data_as_df, list_of_isins_available, get_collection_data_as_df
 
 # Set the page configuration
 st.set_page_config(
@@ -16,6 +16,8 @@ st.title("ETFs Price Comparison")
 
 list_of_isins = list_of_isins_available()
 
+
+st.dataframe(get_collection_data_as_df("etf_daily_prices"))
 
 # Select box for elements
 selected_elements = st.multiselect(

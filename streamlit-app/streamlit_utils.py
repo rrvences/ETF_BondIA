@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+from functools import partial
 import pandas as pd
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 
 FASTAPI_URL = "http://fastapi-app:8000"
 
@@ -22,29 +23,37 @@ def handle_element_response(response_data: dict) -> Union[dict, pd.DataFrame]:
         return pd.DataFrame()
     return response_data
 
-def get_element_data(isin: str, element: str) -> Optional[dict]:
-    """Get specific element data for an ISIN"""
-    url = f"{FASTAPI_URL}/element?isin={isin}&element={element}"
-    data = fetch_data(url)
-    return data.get(element) if data else None
 
+
+def get_data(url: str) -> Optional[dict]:
+    """Fetch data from the given URL."""
+    try:
+        data = fetch_data(url)
+        return data if data else None
+    except Exception as e:
+        # Log the exception or handle it as needed
+        print(f"Error fetching data from {url}: {e}")
+        return None
+
+def get_element_data(isin: str, element: str) -> Optional[dict]:
+    """Get specific element data for an ISIN."""
+    url = f"{FASTAPI_URL}/element?isin={isin}&element={element}"
+    return get_data(url)
 
 def get_collection_data(collection_name: str) -> Optional[dict]:
-    """Get specific element data for an ISIN"""
+    """Get specific collection data."""
     url = f"{FASTAPI_URL}/collection_data?collection_name={collection_name}"
-    data = fetch_data(url)
-    return data if data else None
+    return get_data(url)
 
-
-def get_collection_data_as_df(collection_name: str) -> Optional[dict]:
-    """Get specific element data for an ISIN"""
-    data = get_collection_data(collection_name)
+def get_data_as_df(data_fetcher: Callable, *args) -> pd.DataFrame:
+    """Fetch data using the provided data fetcher and return it as a DataFrame."""
+    data = data_fetcher(*args)
     return pd.DataFrame(data) if data else pd.DataFrame()
 
-def get_etf_element_data_as_df(isin: str, element: str) -> pd.DataFrame:
-    """Get element data as DataFrame"""
-    data = get_element_data(isin, element)
-    return pd.DataFrame(data) if data else pd.DataFrame()
+get_collection_data_as_df = partial(get_data_as_df, get_collection_data)
+get_etf_element_data_as_df = partial(get_data_as_df, get_element_data)
+
+
 
 def get_ref_data_as_df(endpoint: str) -> pd.DataFrame:
     """Get reference data from any endpoint as DataFrame"""
