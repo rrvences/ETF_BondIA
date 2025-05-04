@@ -50,12 +50,23 @@ def get_element_data(isin: str, element:str):
     # Fetch the maturity record using the helper function
     mongodb = MongoDBUtils()
     record = mongodb.retrieve_record(element,{"isin":isin})
-    print(mongodb.retrieve_record("etf_daily_prices",{"isin":"IE00BZ163G84"}))
     mongodb.close_connection()
     print(record)
 
-    return record if record else {"error": "No record found"}
+    return record
 
+@app.get("/clean_element")
+def get_element_data_clean(isin:str, element:str):
+    mongodb = MongoDBUtils()
+    record = mongodb.retrieve_record(element,{"isin":isin})
+    
+    mongodb.close_connection()
+    if len(record) == 1:
+        record = {element: clean_table(record[0][element], element)}
+    else:
+        record = None
+    print(f'Fetching data: {record} \n ----')
+    return record 
 
 @app.post("/process")
 def process_data(data: IsinInput):
@@ -74,9 +85,6 @@ def process_data(data: IsinInput):
     if not os.path.exists(json_save_path) and os.path.exists(pdf_path):
         json_data = parse_pdf_document(isin)  # Only execute if JSON does not exist
         save_json_to_file(json_data, isin)
-
-    else:
-        return "Not FactSheet Found"
 
     if not os.path.exists(json_save_path):
         return "Not Json Found"
