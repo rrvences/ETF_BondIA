@@ -1,4 +1,5 @@
 import os
+import traceback
 from typing import Optional, Dict, Any, Union, List
 from pymongo import MongoClient, ASCENDING
 
@@ -26,6 +27,11 @@ class MongoDBUtils:
         result = collection.insert_one(record)
         return f"Record inserted with ID: {result.inserted_id}"
 
+    def retrieve_all_records(self, collection_name: str) -> List[Dict[str, Any]]:
+        collection = self.db[collection_name]
+        records = collection.find({}, {"_id": 0})
+        return [self.serialize_record(record) for record in records]
+
     def retrieve_record(self, collection_name: str, query: Dict[str, Any]):
         """Retrieve a record from a specified collection, excluding the _id field."""
         collection = self.db[collection_name]
@@ -49,7 +55,7 @@ class MongoDBUtils:
         result = collection.delete_many({})  # Delete all documents
         return result.deleted_count
 
-    def upsert_record(self, collection_name: str, record: Dict[str, Any], key_field: Union[str, List[str]]):
+    def upsert_record(self, collection_name: str, record: Dict[str, Any], unique_keys: Union[str, List[str]]):
         """
         Upsert a record into a specified collection.
         If the record already exists based on the key_field, it will be replaced.
@@ -57,7 +63,7 @@ class MongoDBUtils:
         """
 
         # Ensure the key_field is a list for consistency
-        key_fields = [key_field] if isinstance(key_field, str) else key_field
+        key_fields = [unique_keys] if isinstance(unique_keys, str) else unique_keys
 
         collection = self.db[collection_name]
 
@@ -79,13 +85,10 @@ class MongoDBUtils:
             return result
         
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             print(f"{filter_query=}")
             print(f"{record=}")
         
-        
-
-    
 
     def close_connection(self):
         """Close the MongoDB client connection."""
@@ -98,19 +101,3 @@ class MongoDBUtils:
         if record and "_id" in record:
             record["_id"] = str(record["_id"])  # Convert ObjectId to string
         return record
-
-# Example usage
-if __name__ == "__main__":
-    mongodb = MongoDBUtils()
-
-    record = {
-        "isin": "US0378331005",  # Example ISIN
-        "date": "Timestamp('2025-04-15 00:00:00+0200', tz='Europe/Berlin')",
-        "name": "Apple Inc.",
-        "price": 150.00
-    }
-
-    result = mongodb.upsert_record("test_3", record,["isin","date"])
-    print(result)
-    #print(mongodb.retrieve_record("etf_daily_prices123554",{"isin":"IE00BZ163G84"}))
-    #mongodb.drop_collection("etf_daily_prices")

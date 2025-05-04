@@ -1,26 +1,20 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
-import requests
+from streamlit_utils import get_ref_data_as_df
+
 
 # Set the page configuration
 st.set_page_config(
     page_title="BondIA Country Financial Data", page_icon="", layout="wide"
 )
 
-FASTAPI_URL = "http://fastapi-app:8000"
+interest_rates_df = get_ref_data_as_df("interest_rates")
+credit_rates_df = get_ref_data_as_df("country_list_ratings")
+credit_rates_guide_df = get_ref_data_as_df("credit_ratings_guide")
+debt_to_gdp_df = get_ref_data_as_df("country_debt_to_gdp")
 
 
-# Create DataFrames
-credit_rates_df = pd.DataFrame(
-    requests.get(f"{FASTAPI_URL}/country_list_ratings").json()
-)
-interest_rates_df = pd.DataFrame(requests.get(f"{FASTAPI_URL}/interest_rates").json())
-debt_to_gdp_df = pd.DataFrame(requests.get(f"{FASTAPI_URL}/country_debt_to_gdp").json())
-credit_rates_guide_df = pd.DataFrame(
-    requests.get(f"{FASTAPI_URL}/credit_ratings_guide").json()
-)
 # List of European countries
 european_countries = [
     'Albania', 'Andorra', 'Austria', 'Belarus', 'Belgium', 
