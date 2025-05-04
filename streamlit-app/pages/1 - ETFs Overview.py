@@ -1,56 +1,54 @@
 import streamlit as st
-import pandas as pd
 import requests
-import plotly.express as px
 from streamlit_pdf_viewer import pdf_viewer
+from streamlit_utils import get_ref_data_as_df, read_pdf_content, get_collection_data_as_df, FASTAPI_URL, list_of_pdfs_available
 
 # Set the page configuration
 st.set_page_config(page_title="BondIA Comparator", page_icon="⚔️", layout="wide")
 
 st.title("Bond ETFs Overview")
 
-FASTAPI_URL = "http://fastapi-app:8000"
-
-
-
-json_records = requests.get(f"{FASTAPI_URL}/json-records").json()
-pdf_records = requests.get(f"{FASTAPI_URL}/pdf-records").json()
-
-
-def fetch_available_records():
-    # Call the FastAPI endpoint
-    get_avaliable_records = requests.get(f"{FASTAPI_URL}/records")
-
-    if get_avaliable_records.status_code == 200:
-        records = get_avaliable_records.json()
-        # Convert the list of dictionaries to a DataFrame
-        df = pd.DataFrame(records)
-
-        # Create new columns for JSON and PDF with icons
-        df["JSON"] = df["isin"].apply(lambda x: "✅" if x in json_records else "")
-        df["PDF"] = df["isin"].apply(lambda x: "✅" if x in pdf_records else "")
-
-        return df
-
-    else:
-        st.error("Error fetching records from the server.")
-        return pd.DataFrame()
-
-
-def read_pdf_content(isin: str):
-    pdf_response = requests.get(f"{FASTAPI_URL}/read_pdf?isin={isin}")
-    if pdf_response.status_code == 200:
-        pdf_content = pdf_response.content
-    return pdf_content
-
-
 # Text input for name filter
 name_filter = st.text_input("Enter name to filter:")
 
-
-
 # Fetch and display records
-df = fetch_available_records()
+df_etfs_list = get_ref_data_as_df("etfs_list")
+df_etf_info_status = get_collection_data_as_df("etf_info_status")
+
+
+def status_check(group):
+    # Define the required status value
+    required_status = "Succeeded"
+    
+    # Check if the 'status' column exists in the DataFrame
+    if 'status' not in group.columns:
+        return "Error: Missing required column 'status'"
+
+    # Count the number of elements with the status "Succeeded"
+    succeeded_count = (group['status'] == required_status).sum()  # Count "Succeeded" statuses
+    total_count = group['status'].notna().sum()  # Count non-null statuses
+
+    if total_count == 4:
+        return "Succeeded" if succeeded_count == 4 else "Error Processing"
+    elif total_count < 4:
+        return "Missing elements" if succeeded_count == total_count else "Error Processing"
+    else:
+        return "Error Processing"
+
+
+df_etf_info_status_grouped = (
+    df_etf_info_status
+    .groupby('isin')
+    .apply(status_check)
+    .reset_index(name='status_result')
+)
+
+
+df = (
+    df_etfs_list
+    .merge(df_etf_info_status_grouped, on='isin', how='left')
+    .fillna({'status_result': "No Process attempt"})
+)
 
 # Filter DataFrame based on input (case-insensitive)
 if name_filter:
@@ -58,8 +56,8 @@ if name_filter:
 
 
 df.set_index("isin", inplace=True)
-
-
+df.sort_values(by="status_result",ascending=False,inplace=True)
+pdf_records = list_of_pdfs_available()
 
 # Display the DataFrame
 event_df = st.dataframe(
@@ -78,6 +76,9 @@ if selected_row is not None:
     selected_isin = selected_row  # Get the ISIN of the selected row
 
     options = ["Process Factsheet", "Get Prices and Details"]
+
+    st.dataframe(df_etf_info_status.query(f" isin == '{selected_isin}' "))
+
 
     if selected_isin in pdf_records:
         options.extend(["View PDF"])
@@ -116,7 +117,7 @@ if selected_row is not None:
             # Show a spinner while processing the request
             with st.spinner("Processing... Please wait."):
                 process_response = requests.post(
-                    f"{FASTAPI_URL}/process", json={"isin": selected_isin}
+                    f"{FASTAPI_URL}/process_fs_data", json={"isin": selected_isin}
                 )
                 st.text(process_response.text)
 
@@ -132,5 +133,3 @@ if selected_row is not None:
         )
 else:
     st.warning("Please select a row from the DataFrame to perform actions")
-
-

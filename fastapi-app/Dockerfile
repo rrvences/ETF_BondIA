@@ -1,30 +1,34 @@
-FROM python:3.12
+FROM python:3.12-slim
+
+# Set environment variables
+ENV PYTHONPATH="/app/code:${PYTHONPATH}" \
+    PYTHONBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-COPY ./fastapi-app/requirements.txt .
-
-# Copy the pipelines package
-COPY pipelines /app/code/pipelines
-
-COPY ./fastapi-app/main.py .
-
-# Set the PYTHONPATH to include the pipelines directory
-ENV PYTHONPATH="/app/code/:${PYTHONPATH}"
-
-# Install system dependencies
+# 1. Install system dependencies first (better caching)
 RUN apt-get update && \
-    apt-get install -y poppler-utils && \
-    apt-get clean
+    apt-get install -y --no-install-recommends \
+    poppler-utils && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# 2. Copy requirements and install Python dependencies
+COPY ./fastapi-app/requirements.txt .
 RUN pip install -r requirements.txt
 
-RUN mkdir -p /app/data
+# 3. Copy application files
+COPY ./fastapi-app/main.py ./fastapi-app/fastapi_utils.py ./
 
-RUN mkdir -p /app/data/factsheet
+# 4. Copy pipelines package
+COPY pipelines /app/code/pipelines
 
-RUN mkdir -p /app/data/json
+# 5. Create directories in single layer
+RUN mkdir -p /app/data/{factsheet,json}
 
-RUN pip install -r /app/code/pipelines/requirements.txt
+# 6. Install pipeline requirements if needed (uncomment if required)
+COPY pipelines/requirements.txt .
+RUN pip install -r requirements.txt
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
