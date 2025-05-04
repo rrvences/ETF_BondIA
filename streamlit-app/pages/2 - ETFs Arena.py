@@ -17,8 +17,6 @@ st.title("ETFs Price Comparison")
 list_of_isins = list_of_isins_available()
 
 
-st.dataframe(get_collection_data_as_df("etf_daily_prices"))
-
 # Select box for elements
 selected_elements = st.multiselect(
     "Select up to 4 ETFs to compare:",

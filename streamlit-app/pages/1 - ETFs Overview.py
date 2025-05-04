@@ -16,10 +16,25 @@ df_etfs_list = get_ref_data_as_df("etfs_list")
 df_etf_info_status = get_collection_data_as_df("etf_info_status")
 
 
-st.dataframe(df_etf_info_status)
-
 def status_check(group):
-    return "Succeeded" if (group['status'] == "Succeeded").all() else "Error Processing"
+    # Define the required status value
+    required_status = "Succeeded"
+    
+    # Check if the 'status' column exists in the DataFrame
+    if 'status' not in group.columns:
+        return "Error: Missing required column 'status'"
+
+    # Count the number of elements with the status "Succeeded"
+    succeeded_count = (group['status'] == required_status).sum()  # Count "Succeeded" statuses
+    total_count = group['status'].notna().sum()  # Count non-null statuses
+
+    if total_count == 4:
+        return "Succeeded" if succeeded_count == 4 else "Error Processing"
+    elif total_count < 4:
+        return "Missing elements" if succeeded_count == total_count else "Error Processing"
+    else:
+        return "Error Processing"
+
 
 df_etf_info_status_grouped = (
     df_etf_info_status
@@ -41,7 +56,7 @@ if name_filter:
 
 
 df.set_index("isin", inplace=True)
-df.sort_values(by="status_result",ascending=True,inplace=True)
+df.sort_values(by="status_result",ascending=False,inplace=True)
 pdf_records = list_of_pdfs_available()
 
 # Display the DataFrame
