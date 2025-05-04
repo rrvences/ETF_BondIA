@@ -77,7 +77,7 @@ if selected_row is not None:
 
     options = ["Process Factsheet", "Get Prices and Details"]
 
-    df_etf_info_status.query(f" isin == '{selected_isin}' ")
+    st.dataframe(df_etf_info_status.query(f" isin == '{selected_isin}' "))
 
 
     if selected_isin in pdf_records:
