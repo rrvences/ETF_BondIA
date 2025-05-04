@@ -1,48 +1,25 @@
 import os
 import io
-import pandas as pd
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Dict, Callable, Any
 from pipelines.extraction.extract_etfs_factsheet import extract_and_save_pdf, read_pdf_file_to_bytes
 from pipelines.extraction.extract_etfs_details import get_etf_daily_prices, get_etf_dividends_issued, get_etf_info
 from pipelines.transform.parser_utils import parse_pdf_document, save_json_to_file
 from pipelines.general.filesystem_utils import FS_PATH, JSON_PATH, CODE_PATH
 from pipelines.mongo.mongo_utils import MongoDBUtils
-from pipelines.transform.process_json_data import (extract_maturity,
-                                                    extract_market_allocation, 
-                                                    extract_credit_rate,
-                                                    extract_sector,
-                                                    extract_portfolio_characteristics
-                                                    )
-from pipelines.transform.convert_data_uniformization import clean_table
-
-
+from fastapi_utils import (
+        make_csv_endpoint,
+        extract_element_and_insert_into_mongo,
+        etf_data_processor,
+        log_etfs_info_status
+        )
 
 app = FastAPI()
 
 
 class IsinInput(BaseModel):
     isin: str
-
-
-def get_isin_from_ticker(ticker: str):
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
-    result = df[df['ticker'].str.upper() == ticker.upper()]
-    if not result.empty:
-        return result['isin'].values[0]
-    else:
-        return None
-
-
-def get_ticker_from_isin(isin: str):
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
-    result = df[df['isin'] == isin]
-    if not result.empty:
-        return result['ticker'].values[0]
-    else:
-        return None
 
 
 @app.get("/element")
@@ -57,176 +34,87 @@ def get_element_data(isin: str, element:str):
     return record if record else {"error": "No record found"}
 
 
-@app.post("/process")
-def process_data(data: IsinInput):
-    # Extract the ISIN from the input
+@app.get("/collection_data")
+def get_collection_data(collection_name:str):
+    # Fetch the maturity record using the helper function
+    mongodb = MongoDBUtils()
+    records = mongodb.retrieve_all_records(collection_name)
+    mongodb.close_connection()
+
+    return records
+
+@app.post("/process_fs_data")
+def process_fs_data(data: IsinInput):
     isin = data.isin
 
-    # Define file paths
     pdf_path = f"{FS_PATH}{isin}_factsheet.pdf"
     json_save_path = f"{JSON_PATH}{isin}_factsheet.json"
 
-    # Check if the PDF already exists
-    if not os.path.exists(pdf_path):
-        print(extract_and_save_pdf(isin))  # Only execute if PDF does not exist
+    try:
+        # Check if the PDF already exists, if not, extract and save it
+        if not os.path.exists(pdf_path):
+            extract_and_save_pdf(isin)
 
-    # Check if the JSON already exists
-    if not os.path.exists(json_save_path) and os.path.exists(pdf_path):
-        json_data = parse_pdf_document(isin)  # Only execute if JSON does not exist
-        save_json_to_file(json_data, isin)
+        # Check if the JSON already exists, if not, parse the PDF and save the JSON
+        if not os.path.exists(json_save_path) and os.path.exists(pdf_path):
+            json_data = parse_pdf_document(isin)
+            save_json_to_file(json_data, isin)
 
-    else:
-        return "Not FactSheet Found"
+        elif not os.path.exists(json_save_path):
+            log_etfs_info_status(isin, "process_fs_data", "No data found")
+            raise HTTPException(404, "FactSheet EN or DE not found")
 
-    if not os.path.exists(json_save_path):
-        return "Not Json Found"
+        # Extract and insert data elements into MongoDB
+        for element in ["maturity", "sector", "credit_rate", "market_allocation", "portfolio"]:
+            extract_element_and_insert_into_mongo(isin, element, json_save_path)
 
-    for element in ["maturity","sector","credit_rate","market_allocation", "portfolio"]:
-        
-        extract_element_and_insert_into_mongo(isin,element,json_save_path)
+        log_etfs_info_status(isin, "process_fs_data")
+        return "ETF Factsheet Processed"
 
-    return "Isin Processed"
+    except Exception as e:
+        raise HTTPException(500, f"Error processing data: {str(e)}")
+
+# Define file paths
+country_list_ratings_path = os.path.join(CODE_PATH, "pipelines/ref_data/Country_List_Credit_Ratings.csv")
+credit_ratings_guide_path = os.path.join(CODE_PATH, "pipelines/ref_data/Credit_Ratings_guide.csv")
+interest_rates_path = os.path.join(CODE_PATH, "pipelines/ref_data/Interest_Rates.csv")
+country_debt_to_gdp_path = os.path.join(CODE_PATH, "pipelines/ref_data/Country_List_Government_Debt_to_GDP.csv")
+etfs_ref_data_path = os.path.join(CODE_PATH, "pipelines/ref_data/etfs_ref_data.csv")
+
+# Register endpoints using functools.partial or the factory
+app.get("/country_list_ratings")(make_csv_endpoint(country_list_ratings_path))
+app.get("/credit_ratings_guide")(make_csv_endpoint(credit_ratings_guide_path))
+app.get("/interest_rates")(make_csv_endpoint(interest_rates_path))
+app.get("/country_debt_to_gdp")(make_csv_endpoint(country_debt_to_gdp_path))
+app.get("/etfs_list")(make_csv_endpoint(etfs_ref_data_path))
+
 
 @app.post("/extract_prices")
-def extract_daily_prices(isin: str):
-    
-    ticker = get_ticker_from_isin(isin)
-    daily_prices_df =  get_etf_daily_prices(ticker)
-    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
-
-    mongodb = MongoDBUtils()
-
-
-    # Assuming result_dict is your dictionary with tickers as keys
-    for ticker, records in result_dict.items():
-        # Insert each record into the collection
-        for record_data in records:
-            record_data["isin"] = isin
-            mongodb.upsert_record("etf_daily_prices", record_data, ["isin","date"])
-
-    mongodb.close_connection()
-
-    return "Daily Prices Processed"
+def extract_daily_prices(isin: str) -> str:
+    """Endpoint wrapper for daily prices extraction"""
+    return etf_data_processor(
+        data_fetcher=get_etf_daily_prices,
+        collection_name="etf_daily_prices",
+        unique_keys=["isin", "date"]
+    )(isin)
 
 @app.post("/extract_dividends")
-def extract_dividends_issued(isin: str):
-
-    ticker = get_ticker_from_isin(isin)
-    daily_prices_df =  get_etf_dividends_issued(ticker)
-    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
-    mongodb = MongoDBUtils()
-
-    # Assuming result_dict is your dictionary with tickers as keys
-    for ticker, records in result_dict.items():
-        # Insert each record into the collection
-        for record_data in records:
-            record_data["isin"] = isin
-            mongodb.upsert_record("etf_dividends_issued", record_data, ["isin","date"])
-
-    mongodb.close_connection()
-
-    return "Dividends Processed"
+def extract_dividends_issued(isin: str) -> str:
+    """Endpoint wrapper for dividends extraction"""
+    return etf_data_processor(
+        data_fetcher=get_etf_dividends_issued,
+        collection_name="etf_dividends_issued",
+        unique_keys=["isin", "date"]
+    )(isin)
 
 @app.post("/extract_info")
-def extract_info(isin: str):
-
-    ticker = get_ticker_from_isin(isin)
-    daily_prices_df =  get_etf_info(ticker)
-    result_dict = daily_prices_df.groupby('ticker').apply(lambda x: x.to_dict(orient='records')).to_dict()
-    mongodb = MongoDBUtils()
-
-    # Assuming result_dict is your dictionary with tickers as keys
-    for ticker, records in result_dict.items():
-        # Insert each record into the collection
-        for record_data in records:
-            record_data["isin"] = isin
-            mongodb.upsert_record("etf_info", record_data, "isin")
-
-    mongodb.close_connection()
-
-    return "Etf Info Processed"
-
-def extract_element_and_insert_into_mongo(isin: str, element: str, json_save_path: str):
-    """
-    Extracts a specified element from a JSON file and inserts it into MongoDB if it doesn't already exist.
-
-    Args:
-        isin (str): The ISIN code for the record.
-        element (str): The type of element to extract (e.g., "maturity", "sector", "credit_rate", "market_allocation").
-        json_save_path (str): The path to the JSON file from which to extract the data.
-    """
-    # Mapping of element types to extraction functions
-    function_dict: Dict[str, Callable[[str], Any]] = {
-        "maturity": extract_maturity,
-        "sector": extract_sector,
-        "credit_rate": extract_credit_rate,
-        "market_allocation": extract_market_allocation,
-        "portfolio": extract_portfolio_characteristics
-    }
-    
-    # Check if the provided element is valid
-    if element not in function_dict:
-        raise ValueError(f"Invalid element type: {element}. Must be one of {list(function_dict.keys())}.")
-    
-    mongodb = MongoDBUtils()
-
-    # If the record does not exist, extract the data
-    extracted_data = function_dict[element](json_save_path)
-
-    # Prepare the record for insertion
-    record_data = {"isin": isin, element: extracted_data}
-
-    # Insert the new record into MongoDB
-    insert_result = mongodb.upsert_record(element, record_data,"isin")
-    print(insert_result)  # Optionally print the result of the insertion
-
-
-@app.get("/country_list_ratings")
-def get_country_list_ratings():
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Country_List_Credit_Ratings.csv")
-    df.fillna(value="NA", inplace=True)
-    # Convert the DataFrame to a dictionary
-    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
-    return JSONResponse(content=records_dict)
-
-
-@app.get("/credit_ratings_guide")
-def get_country_ratings_guide():
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Credit_Ratings_guide.csv")
-    df.fillna(value="NA", inplace=True)
-    # Convert the DataFrame to a dictionary
-    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
-    return JSONResponse(content=records_dict)
-
-@app.get("/interest_rates")
-def get_interest_rates():
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Interest_Rates.csv")
-    df.fillna(value="NA", inplace=True)
-    # Convert the DataFrame to a dictionary
-    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
-    return JSONResponse(content=records_dict)
-
-@app.get("/country_debt_to_gdp")
-def get_country_debt_to_gdp():
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/Country_List_Government_Debt_to_GDP.csv")
-    df.fillna(value="NA", inplace=True)
-    # Convert the DataFrame to a dictionary
-    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
-    return JSONResponse(content=records_dict)
-
-@app.get("/records")
-def get_records():
-    # Read the CSV file into a DataFrame
-    df = pd.read_csv(f"{CODE_PATH}pipelines/ref_data/etfs_ref_data.csv")
-    df.fillna(value="NA", inplace=True)
-    # Convert the DataFrame to a dictionary
-    records_dict = df.to_dict(orient="records")  # Convert to list of dictionaries
-    return JSONResponse(content=records_dict)
-
+def extract_info(isin: str) -> str:
+    """Endpoint wrapper for general info extraction"""
+    return etf_data_processor(
+        data_fetcher=get_etf_info,
+        collection_name="etf_info",
+        unique_keys=["isin"]
+    )(isin)
 
 @app.get("/read_pdf")
 def read_pdf_records(isin: str):
@@ -256,7 +144,3 @@ def get_json_records():
     list_of_json = os.listdir(JSON_PATH)
     json_records = [ pdf.replace("_factsheet.json","") for pdf in list_of_json]
     return json_records
-
-
-#print(extract_daily_prices("IE00BZ163G84"))
-#print(get_element_data("IE00BZ163G84","etf_daily_prices"))

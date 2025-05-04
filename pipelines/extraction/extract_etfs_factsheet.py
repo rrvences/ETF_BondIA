@@ -56,16 +56,16 @@ def extract_and_save_pdf(isin:str = ""):
     justetf_soup = extract_factsheet_link(just_etf_url)
 
     if justetf_soup:
+        for lang in ['EN']:
+            factsheet_element = justetf_soup.find('a', title=f'Factsheet ({lang})')
+            if factsheet_element and 'href' in factsheet_element.attrs:
+                factsheet_url = factsheet_element['href']
+                factsheet_content = extract_factsheet_content(factsheet_url)
+                pdf_bytes_to_single_pdf(factsheet_content,f"{FS_PATH}{isin}_factsheet.pdf")
+                return "Factsheet extracted and save"
 
-        factsheet_element = justetf_soup.find('a', title='Factsheet (EN)')
-        if factsheet_element and 'href' in factsheet_element.attrs:
-            factsheet_url = factsheet_element['href']
-            factsheet_content = extract_factsheet_content(factsheet_url)
-            pdf_bytes_to_single_pdf(factsheet_content,f"{FS_PATH}{isin}_factsheet.pdf")
-            return "Factsheet extracted and save"
-
-        else:
-            return "Not able to find En Factsheet"
+            else:
+                return "Not able to find En Factsheet"
     
     else:
         return "Not able to find etf in Just Etf"

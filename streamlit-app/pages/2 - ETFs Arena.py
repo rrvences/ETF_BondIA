@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import requests
+from streamlit_utils import get_etf_element_data_as_df, list_of_isins_available, get_collection_data_as_df
 
 # Set the page configuration
 st.set_page_config(
@@ -10,30 +10,12 @@ st.set_page_config(
     layout="wide"        
 )
 
-FASTAPI_URL = "http://fastapi-app:8000"
-
-def get_element_data_as_df(isin, element):
-    # Call the FastAPI endpoint with a GET request
-    response = requests.get(f"{FASTAPI_URL}/element?isin={isin}&element={element}")
-
-    if response.status_code == 200:
-        record = response.json()
-    
-        if "error" in record:
-            return pd.DataFrame()  # Return an empty DataFrame on error
-    
-        else:
-            return pd.DataFrame(record)
-    
-    else:
-        st.error("Error fetching record from the server.")
-        return pd.DataFrame()  # Return an empty DataFrame on error
 
 # Streamlit app
 st.title("ETFs Price Comparison")
 
+list_of_isins = list_of_isins_available()
 
-list_of_isins = requests.get(f"{FASTAPI_URL}/json-records").json()
 
 # Select box for elements
 selected_elements = st.multiselect(
@@ -50,7 +32,7 @@ if selected_elements:
 fig = go.Figure()
 
 for element in selected_elements:
-    prices_df = get_element_data_as_df(element, "etf_daily_prices")
+    prices_df = get_etf_element_data_as_df(element, "etf_daily_prices")
     #info_df = get_element_data_as_df(element, "etf_info")
     
     # Only add a line if both dataframes are not empty
@@ -80,7 +62,7 @@ if fig.data:
 
 
 for element in selected_elements:
-    dividends_df = get_element_data_as_df(element, "etf_dividends_issued")
+    dividends_df = get_etf_element_data_as_df(element, "etf_dividends_issued")
     
     if dividends_df.empty:
         dividends_df = pd.DataFrame([{

@@ -26,6 +26,7 @@ def get_etf_dividends_issued(ticker, period = 'max') -> pd.DataFrame:
         df_dividends["date"] = df_dividends["date"].dt.floor('D')
         df_dividends["ticker"] = ticker
         df_dividends.reset_index(drop=True, inplace = True)
+    
     except Exception as e:
         print(ticker,e)
         print(traceback.format_exc())
