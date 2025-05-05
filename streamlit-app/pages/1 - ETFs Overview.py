@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pandas as pd
 from streamlit_pdf_viewer import pdf_viewer
 from streamlit_utils import get_ref_data_as_df, read_pdf_content, get_collection_data_as_df, FASTAPI_URL, list_of_pdfs_available
 
@@ -35,6 +36,9 @@ def status_check(group):
     else:
         return "Error Processing"
 
+
+if  df_etf_info_status.empty:
+    df_etf_info_status = pd.DataFrame({"isin":"","status":"Error"},index=[0])
 
 df_etf_info_status_grouped = (
     df_etf_info_status
