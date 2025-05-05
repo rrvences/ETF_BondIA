@@ -22,12 +22,6 @@ st.title("ETFs Price Comparison")
 
 list_of_isins = list_of_isins_available()
 
-
-st.dataframe(get_collection_data_as_df("maturity"))
-st.dataframe(get_collection_data_as_df("credit_rate"))
-st.dataframe(get_collection_data_as_df("market_allocation"))
-st.dataframe(get_collection_data_as_df("portfolio"))
-
 # Select box for elements
 selected_etfs = st.multiselect(
     "Select up to 4 ETFs to compare:",
@@ -103,41 +97,46 @@ if compare_button and len(selected_etfs) > 0:
         tables_portfolio[isin] = get_etf_element_data_clean(isin, "portfolio")
 
     df_merged = merge_tables(tables_portfolio, element='Portfolio')
-    st.dataframe(df_merged)
+
+    if not df_merged.empty:
+        st.write("### Portfolio Characteristics")
+        st.dataframe(df_merged)
     
     # Maturity
     df_merged = merge_tables(tables_maturity, element='Maturity')
     # Plot Comparison
-    st.write("### Maturity Distribution Comparison")
-    fig = px.bar(
-        df_merged.melt(id_vars=["Maturity"], var_name="Table", value_name="Percentage"),
-        x="Maturity",
-        y="Percentage",
-        color="Table",
-        barmode="group",
-        title="Comparison of Maturity Distributions",
-    )
-    st.plotly_chart(fig)
+    if not df_merged.empty:
+        st.write("### Maturity Distribution Comparison")
+        fig = px.bar(
+            df_merged.melt(id_vars=["Maturity"], var_name="Table", value_name="Percentage"),
+            x="Maturity",
+            y="Percentage",
+            color="Table",
+            barmode="group",
+            title="Comparison of Maturity Distributions",
+        )
+        st.plotly_chart(fig)
 
     ### RATING
     df_merged = merge_tables(tables_rating, element='Rating')
     # Plot Rating Breakdown
-    st.write("### Rating Breakdown Comparison")
-    fig_rating = px.bar(
-        df_merged.melt(id_vars=["Rating"], var_name="Table", value_name="Percentage"),
-        x="Rating",
-        y="Percentage",
-        color="Table",
-        barmode="group",
-        title="Comparison of Rating Breakdown",
-    )
+    if not df_merged.empty:
+        st.write("### Rating Breakdown Comparison")
+        fig_rating = px.bar(
+            df_merged.melt(id_vars=["Rating"], var_name="Table", value_name="Percentage"),
+            x="Rating",
+            y="Percentage",
+            color="Table",
+            barmode="group",
+            title="Comparison of Rating Breakdown",
+        )
 
-    fig_rating.update_layout(
-        barmode="group",
-        bargap=0.15,  # gap between bars of adjacent location coordinates.
-        bargroupgap=0.1,  # gap between bars of the same location coordinate.
-    )
-    st.plotly_chart(fig_rating)
+        fig_rating.update_layout(
+            barmode="group",
+            bargap=0.15,  # gap between bars of adjacent location coordinates.
+            bargroupgap=0.1,  # gap between bars of the same location coordinate.
+        )
+        st.plotly_chart(fig_rating)
 
     ### MARKET ALLOCATION
     # Standardizing Country Names (Removing extra words for consistency)
@@ -146,7 +145,6 @@ if compare_button and len(selected_etfs) > 0:
     if not df_merged.empty:
         # Plot
         st.write("### Market Allocation Comparison")
-        st.dataframe(df_merged)
         fig_market = px.bar(df_merged.melt(id_vars=['Country'], var_name='Table', value_name='Percentage'),
                             y='Country', x='Percentage', color='Table', barmode='group',
                             title="Comparison of Market Allocation",

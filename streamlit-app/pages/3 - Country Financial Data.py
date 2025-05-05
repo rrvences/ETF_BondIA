@@ -136,6 +136,8 @@ with tab3:
         geo=dict(
         showframe=False,
         showcoastlines=False,
+        showcountries=True,
+        countrycolor='#f5f5f5',
         projection_type='equirectangular'
     ))
 

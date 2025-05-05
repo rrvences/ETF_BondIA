@@ -105,7 +105,7 @@ def map_to_rating_ranges(df, element):
     }
     
     for i in range(len(df)):
-        key = df[element].iloc[i]
+        key = df[element].iloc[i].upper()
         if key in new_table.keys():
             new_table[key] = df['Value'].iloc[i]
         elif key.split(' ')[0].strip() in new_table.keys(): # more than one word
@@ -152,10 +152,6 @@ def map_to_issuers_names(df, element):
 
 def map_to_portfolio_keys(df, element):
     label_dict = {
-        "Average Maturity (years)": 0,
-        "Effective Duration (years)": 0,
-        "Number of Bonds": 0,
-        "Yield": 0
     }
     df[element] = df[element].str.capitalize()
     for i in range(len(df)):
