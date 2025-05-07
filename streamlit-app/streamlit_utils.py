@@ -56,9 +56,15 @@ def get_etf_element_data_clean(isin, element):
 
 
 def merge_tables(tables, element):
+    combined_df = None
 
-    tables_df = [pd.DataFrame(list(tables[isin].items()), columns=[element, isin]) for isin in tables.keys()]
-    return pd.concat(tables_df)
+    for isin in tables.keys():
+        df = pd.DataFrame(list(tables[isin].items()), columns=[element, isin])
+        if combined_df is None:
+            combined_df = df
+        else:
+            combined_df = combined_df.merge(df, on=element, how='outer')
+    return combined_df
 
 
 def get_element_data(isin: str, element: str) -> Optional[dict]:

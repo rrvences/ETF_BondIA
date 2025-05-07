@@ -140,6 +140,7 @@ def map_to_issuers_names(df, element):
         country = [country for country in issuer_countries if country in issuer]
         if len(country) > 1:
             print(f"Issue: {len(country)} countries found for {issuer}")
+            labels_dict[issuer] = df['Value'].iloc[i]
         elif len(country) == 1:
             labels_dict[country[0]] = df['Value'].iloc[i]
         else:
