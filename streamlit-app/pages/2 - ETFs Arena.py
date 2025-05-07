@@ -140,7 +140,6 @@ if compare_button and len(selected_etfs) > 0:
 
     ### MARKET ALLOCATION
     # Standardizing Country Names (Removing extra words for consistency)
-
     df_merged = merge_tables(tables_market, element='Country')
     if not df_merged.empty:
         # Plot
