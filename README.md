@@ -93,3 +93,26 @@ docker-compose down
 ## Notes
 
 - Ensure Docker and Docker Compose are installed on your system.
+
+## DEMO
+
+### Bonds Introduction Page
+
+![](demo-gifs/BondIA_Intro.gif)
+
+### Select and process one ETF
+
+![](demo-gifs/BondIA_ProcessETF.gif)
+
+### View ETF Factsheet
+
+![](demo-gifs/BondIA_ViewPDF.gif)
+
+### Compare different ETFs
+
+![](demo-gifs/BondIA_ETFsArena.gif)
+
+### Countries Financial Data
+
+![](demo-gifs/BondIA_CountryFinancialData.gif)
+
