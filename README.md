@@ -1,24 +1,8 @@
-
-<p align="center">
-  <img src="media/logo.png" width="200" alt="Project Logo">
-</p>
-
-<h1 align="center">ETF Bond Comparison Application</h1>
+# ETF Bond Comparison Application
 
 This is a Python-based application designed to compare bond ETFs by accessing and analyzing their factsheet information. The project uses Docker to orchestrate its services, which include a MongoDB database, a FastAPI backend, and a Streamlit frontend for visualization.
 
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.12-blue?logo=python" alt="Python Badge">
-  <img src="https://img.shields.io/badge/Streamlit-app-red?logo=streamlit" alt="Streamlit Badge">
-  <img src="https://img.shields.io/badge/Docker-container-blue?logo=docker" alt="Docker Badge">
-  <img src="https://img.shields.io/badge/MongoDB-database-green?logo=mongodb" alt="MongoDB Badge">
-  <img src="https://img.shields.io/badge/Web%20Scraping-BeautifulSoup%2FRequests-yellow" alt="Web Scraping Badge">
-  <img src="https://img.shields.io/badge/PDF Parsing-LLamaParse-yellow" alt="LLamaParse Badge">
-</p>
-
 ---
-
 
 ## Project Structure
 
@@ -114,21 +98,21 @@ docker-compose down
 
 ### Bonds Introduction Page
 
-![](media/BondIA_Intro.gif)
+![](demo-gifs/BondIA_Intro.gif)
 
 ### Select and process one ETF
 
-![](media/BondIA_ProcessETF.gif)
+![](demo-gifs/BondIA_ProcessETF.gif)
 
 ### View ETF Factsheet
 
-![](media/BondIA_ViewPDF.gif)
+![](demo-gifs/BondIA_ViewPDF.gif)
 
 ### Compare different ETFs
 
-![](media/BondIA_ETFsArena.gif)
+![](demo-gifs/BondIA_ETFsArena.gif)
 
 ### Countries Financial Data
 
-![](media/BondIA_CountryFinancialData.gif)
+![](demo-gifs/BondIA_CountryFinancialData.gif)
 
