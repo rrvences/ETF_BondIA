@@ -61,7 +61,7 @@ if name_filter:
 
 df.set_index("isin", inplace=True)
 df.sort_values(by="status_result",ascending=False,inplace=True)
-pdf_records = list_of_pdfs_available()
+pdf_records = list_of_pdfs_available() or []
 
 # Display the DataFrame
 event_df = st.dataframe(

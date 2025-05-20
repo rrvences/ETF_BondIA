@@ -24,8 +24,15 @@ COPY ./fastapi-app/main.py ./fastapi-app/fastapi_utils.py ./
 # 4. Copy pipelines package
 COPY pipelines /app/code/pipelines
 
+
+RUN mkdir -p data
+
 # 5. Create directories in single layer
-RUN mkdir -p /app/data/{factsheet,json}
+RUN mkdir data/factsheet
+
+RUN mkdir data/json
+
+RUN mkdir data/test
 
 # 6. Install pipeline requirements if needed (uncomment if required)
 COPY pipelines/requirements.txt .
