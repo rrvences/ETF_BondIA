@@ -5,6 +5,12 @@ ENV PYTHONPATH="/app/code:${PYTHONPATH}" \
     PYTHONBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
+
+# 5. Create directories in single layer
+RUN mkdir -p /app/data/factsheet
+
+RUN mkdir -p /app/data/json
+
 WORKDIR /app
 
 # 1. Install system dependencies first (better caching)
@@ -24,15 +30,6 @@ COPY ./fastapi-app/main.py ./fastapi-app/fastapi_utils.py ./
 # 4. Copy pipelines package
 COPY pipelines /app/code/pipelines
 
-
-RUN mkdir -p data
-
-# 5. Create directories in single layer
-RUN mkdir data/factsheet
-
-RUN mkdir data/json
-
-RUN mkdir data/test
 
 # 6. Install pipeline requirements if needed (uncomment if required)
 COPY pipelines/requirements.txt .
